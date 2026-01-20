@@ -5,6 +5,6 @@ def  table(malte,limit):
   for x in number: 
     num = malte * x
     print(f"{malte} × {x}  = {num} ")
-table(10,5)
+table(5,12)
 #مشروع  جدول الضرب باستخدام الدوال
   
