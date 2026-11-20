@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="games.pocket.door" android:versionCode="1" android:versionName="1.0">
+ <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="28"/>
+ <application android:label="لا تثق بالباب" android:icon="@drawable/door" android:allowBackup="false" android:usesCleartextTraffic="false" android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen">
+  <activity android:name=".GameActivity" android:exported="true" android:screenOrientation="sensorLandscape" android:configChanges="keyboardHidden|orientation|screenSize">
+   <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+  </activity>
+ </application>
+</manifest>
