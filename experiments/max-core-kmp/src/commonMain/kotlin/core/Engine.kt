@@ -34,8 +34,13 @@ class Session(private val validator:ProjectV1, initial:String) {
     var state=validator.parse(initial); private set
     private val past=ArrayDeque<JsonObject>(); private val future=ArrayDeque<JsonObject>()
     fun apply(c:JsonObject) {
+        fun stringField(k:String) = c[k]?.jsonPrimitive?.isString == true
+        require(stringField("op"));val op=c.s("op")
+        val args=when(op){"split"->setOf("id","atUs","rightId");"trimLeft","trimRight","putKey","removeKey"->if(op=="putKey")setOf("id","atUs","value") else setOf("id","atUs");"delete"->setOf("id");"order"->setOf("ids");"undo","redo"->emptySet();else->throw IllegalArgumentException("UNKNOWN_OP")}
+        require(c.keys==args+setOf("op","expectedRevision"));for(k in listOf("expectedRevision","atUs")) c[k]?.let {require(!it.jsonPrimitive.isString && it.jsonPrimitive.longOrNull!=null)}
+        for(k in listOf("id","rightId")) if(k in args)require(stringField(k))
         val p=state; val rev=p.n("revision"); require(c.n("expectedRevision")==rev){"STALE_REVISION"};require(rev<9007199254740991L){"REVISION_LIMIT"}
-        val clips=Clock.clips(p).toMutableList();val ls=layers(p).toMutableList();val op=c.s("op")
+        val clips=Clock.clips(p).toMutableList();val ls=layers(p).toMutableList()
         val candidate=when(op){
             "split","trimLeft","trimRight","delete" -> {
                 val idx=clips.indexOfFirst{it.s("id")==c.s("id")};require(idx>=0){"UNKNOWN_ID"};val old=clips[idx]
@@ -78,4 +83,14 @@ class Engine(schema:String) {
             }})
         }.toString()
     }
+}
+
+/** Minimal public string ABI. Kotlin Long/Js BigInt do not escape this boundary. */
+class Handle(schema:String, initial:String) {
+    private val session=Session(ProjectV1(schema),initial)
+    fun snapshot()=session.state.toString()
+    fun edit(command:String):String {
+        strictDocument(command); session.apply(Json.parseToJsonElement(command).jsonObject); return session.state.n("revision").toString()
+    }
+    fun render(ptsUs:String)=scene(session.state,ptsUs.toLong()).toString()
 }

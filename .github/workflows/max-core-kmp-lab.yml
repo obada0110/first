@@ -36,6 +36,17 @@ jobs:
       - name: Execute isolated parity and benchmark suite
         run: |
           bash tools/run-proof.sh 2>&1 | tee proof/records/suite.log
+      - name: Allow KVM on the hosted runner
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Run the JVM bytecode on Android ART (isolated emulator)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          working-directory: experiments/max-core-kmp
+          script: bash tools/android.sh
       - name: Retain evidence even on failure
         if: always()
         uses: actions/upload-artifact@v6
