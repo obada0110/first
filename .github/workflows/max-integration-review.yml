@@ -1,0 +1,25 @@
+name: MAX Phase 2 collect unchanged editor QA
+on:
+  push:
+    branches: ['arena/bff96530-first']
+    paths: ['.github/workflows/max-integration-review.yml']
+permissions:
+  actions: read
+  contents: write
+jobs:
+  evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Collect synthetic QA evidence, including failures
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo=$GITHUB_REPOSITORY
+          gh run download 44931932003 -R "$repo" -n single-source-evidence -D proof/qa
+          gh run download 44931932003 -R "$repo" -n project-contract-android-results -D proof/contract
+          gh run view 44931932003 -R "$repo" --log-failed | grep -Ei 'ERROR|AssertionError|FAIL:|TestFailure|black|Expected:|Actual:|All tests passed' | cut -c1-700 > proof/failures.txt || true
+          cd proof; zip -qr "$RUNNER_TEMP/proof.zip" .
+          sha=$(python3 -c 'import sys,json,base64;print(json.dumps({"encoding":"base64","content":base64.b64encode(open(sys.argv[1],"rb").read()).decode()}))' "$RUNNER_TEMP/proof.zip" | gh api -X POST "repos/$repo/git/blobs" --input - --jq '.sha')
+          echo "::notice title=Experiment evidence::$sha"
