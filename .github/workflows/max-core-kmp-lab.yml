@@ -26,6 +26,7 @@ jobs:
       - name: Verify frozen production tree and fixtures
         run: |
           git diff --exit-code 7c13420462ce2ca35861a2ceb08652d4d7588474 HEAD -- ../../max-motion ../../docs ../../design
+          test -z "$(git diff --name-only --diff-filter=MDRT 7c13420462ce2ca35861a2ceb08652d4d7588474 HEAD)"
           cmp fixtures/project-v1.json ../../max-motion/contract/schema/project-v1.json
           for x in project vectors; do cmp fixtures/$x.json ../../max-motion/contract/fixtures/$x.json; done
       - name: Build the two targets

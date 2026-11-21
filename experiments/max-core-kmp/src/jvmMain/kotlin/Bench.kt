@@ -12,14 +12,14 @@ object Bench {
         val report=buildJsonObject {
             put("runtime",System.getProperty("java.runtime.version"));put("commandsPerBatch",commands.size)
             for(file in listOf("project.json","large.json")) {
-                val project=File(dir,file).readText();val times=mutableListOf<Double>();val heaps=mutableListOf<Long>()
+                val project=File(dir,file).readText();val times=mutableListOf<Double>();val heaps=mutableListOf<Long>();val starts=mutableListOf<Long>();val ends=mutableListOf<Long>()
                 repeat(18){i->
                     val session=Handle(schema,project);if(i==3)System.gc();val before=heap()
                     val start=System.nanoTime();var revision="";for(op in commands)revision=session.edit(op)
                     val end=System.nanoTime();val after=heap();check(revision==commands.size.toString())
-                    if(i>=3){times.add((end-start)/1e6);heaps.add(after-before)}
+                    if(i>=3){times.add((end-start)/1e6);heaps.add(after-before);starts.add(before);ends.add(after)}
                 }
-                putJsonObject(file){put("batchMs",JsonArray(times.map{JsonPrimitive(it)}));put("heapDeltaBytes",JsonArray(heaps.map{JsonPrimitive(it)}))}
+                putJsonObject(file){put("batchMs",JsonArray(times.map{JsonPrimitive(it)}));put("heapDeltaBytes",JsonArray(heaps.map{JsonPrimitive(it)}));put("heapBeforeBytes",JsonArray(starts.map{JsonPrimitive(it)}));put("heapAfterBytes",JsonArray(ends.map{JsonPrimitive(it)}))}
             }
         }; File(args[1]).writeText(report.toString())
     }
