@@ -7,7 +7,15 @@ import array, math
 qa=Path(os.environ['QA']); out=qa/'evidence'; app='io.github.obada0110.maxeditor'
 def cmd(*a):return sp.check_output(list(map(str,a)),timeout=35)
 def adb(*a):return cmd('adb',*a)
-def shot(name): (out/(name+'.png')).write_bytes(adb('exec-out','screencap','-p'))
+def shot(name):
+    path=out/(name+'.png')
+    for _ in range(4):
+        path.write_bytes(adb('exec-out','screencap','-p'))
+        if not name.endswith(('-preview','-output')):return
+        rgb=cmd('ffmpeg','-v','error','-i',path,'-vf','crop=64:64:(iw-64)/2:ih*0.21','-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','-threads','1','pipe:1')
+        if sum(max(px)-min(px)>50 for px in zip(rgb[::3],rgb[1::3],rgb[2::3]))>500:return
+        time.sleep(.25)
+    raise AssertionError('No colored test-pattern pixels in real preview: '+name)
 def nodes():
     adb('shell','uiautomator','dump','--compressed','/sdcard/qa-window.xml');return list(ET.fromstring(adb('shell','cat','/sdcard/qa-window.xml')).iter('node'))
 def tap(n):
@@ -72,8 +80,8 @@ class Handler(BaseHTTPRequestHandler):
             if op=='pick':threading.Thread(target=pick,args=(name,),daemon=True).start()
             elif op=='shot':shot(name)
             elif op=='verify':verify(name)
-            elif op=='hide':adb('shell','mv','/sdcard/Download/'+name,'/sdcard/Download/'+name+'.off')
-            elif op=='show':adb('shell','mv','/sdcard/Download/'+name+'.off','/sdcard/Download/'+name)
+            elif op=='hide':adb('shell','mv','/sdcard/Download/'+name,'/data/local/tmp/'+name+'.off')
+            elif op=='show':adb('shell','mv','/data/local/tmp/'+name+'.off','/sdcard/Download/'+name)
             else:raise ValueError(op)
             self.send_response(200);self.end_headers();self.wfile.write(b'ok')
         except Exception as exc:traceback.print_exc();self.send_error(500,str(exc))
