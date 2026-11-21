@@ -21,6 +21,7 @@ function setPlay(playing) {
 }
 function closeDrawer() {
   panel = "";
+  $("motionControls").hidden = true;
   $("drawer").hidden = true;
   picking = compare = false;
   queueFX();
@@ -41,6 +42,7 @@ function openPanel(b) {
   $("cuts").hidden = panel !== "cut";
   $("mediaTools").hidden = panel !== "media";
   layerPanel();
+  window.MotionBench?.refresh();
   const ids = groups[panel];
   $("fxTools").hidden = !ids;
   if (ids) {
@@ -156,7 +158,7 @@ function paintLane() {
     ink.fillStyle = "#f8f3ea";
     ink.fillText(String(i + 1).padStart(2, "0"), left + 10, y + 16);
     ink.restore();
-    ink.strokeStyle = i === active ? "#ffa482" : "#5c7770";
+    ink.strokeStyle = i === active ? "#6ce6bd" : "#5c7770";
     ink.lineWidth = i === active ? 2.5 : 1;
     ink.strokeRect(left + 1.5, y + 1, Math.max(0.5, width - 3), hh - 2);
     for (const key of s[4]?.keys || []) {
@@ -165,7 +167,7 @@ function paintLane() {
       ink.save();
       ink.translate(x, y + hh - 7);
       ink.rotate(Math.PI / 4);
-      ink.fillStyle = "#ffc19f";
+      ink.fillStyle = "#b8edda";
       ink.fillRect(-3, -3, 6, 6);
       ink.restore();
     }

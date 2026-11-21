@@ -341,12 +341,13 @@ async function start(type) {
             return;
           }
           const period = 1 / (type === "export" ? +$("fps").value : 30);
-          if (t + .002 < j.nextDraw) {
+          if (t + 0.002 < j.nextDraw) {
             j.raf = requestAnimationFrame(frame);
             return;
           }
           // Advance on a regular clock rather than rounding every interval up to a display refresh.
-          j.nextDraw += Math.max(1, Math.floor((t - j.nextDraw) / period) + 1) * period;
+          j.nextDraw +=
+            Math.max(1, Math.floor((t - j.nextDraw) / period) + 1) * period;
           try {
             syncOverlay(pos, true);
             j.draw?.();
@@ -404,7 +405,7 @@ function currentFX() {
 function drawPreview(ix = active) {
   if (!ready || v.readyState < 2) return;
   const [w, h] = projectSize(),
-    sc = Math.min(1, 920 / Math.max(w, h));
+    sc = Math.min(1, (window.previewLimit || 920) / Math.max(w, h));
   const cw = Math.max(2, Math.round(w * sc)),
     ch = Math.max(2, Math.round(h * sc));
   if (fxCanvas.width !== cw || fxCanvas.height !== ch) {

@@ -18,11 +18,13 @@ const { chromium } = require("playwright-core"),
     });
     const errors = [];
     p.on("pageerror", (e) => errors.push(String(e)));
-    await p.goto(
+    const url = new URL(
       process.argv[2].includes("://")
         ? process.argv[2]
         : "file://" + process.argv[2],
     );
+    url.searchParams.set("editor", "1");
+    await p.goto(url.href);
     await p.waitForFunction(() => ready && !loading);
     await p
       .locator("#file")

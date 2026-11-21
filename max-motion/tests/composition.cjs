@@ -21,7 +21,13 @@ const { chromium } = require("playwright-core"),
       errors.push(String(e));
       console.error(e);
     });
-    await p.goto(process.argv[2]);
+    const url = new URL(
+      process.argv[2].includes("://")
+        ? process.argv[2]
+        : "file://" + process.argv[2],
+    );
+    url.searchParams.set("editor", "1");
+    await p.goto(url.href);
     const wait = (f) => p.waitForFunction(f),
       click = (id) => p.locator("#" + id).click(),
       tab = (id) => p.locator("[data-panel=" + id + "]").click(),

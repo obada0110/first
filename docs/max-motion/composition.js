@@ -10,7 +10,16 @@ let project = { w: 0, h: 0, bg: "#000000" },
   loading = false,
   setting = "",
   hold = null;
-const identity = () => ({ x: 50, y: 50, w: 100, h: 100, cropX: 0, cropY: 0 }),
+const identity = () => ({
+    x: 50,
+    y: 50,
+    w: 100,
+    h: 100,
+    angle: 0,
+    opacity: 100,
+    cropX: 0,
+    cropY: 0,
+  }),
   transform = () => ({ ...identity(), keys: [] });
 const clamp = (v, l, h) => Math.max(l, Math.min(h, v)),
   byId = (id) => layers.find((l) => l.id === id);
@@ -74,6 +83,7 @@ async function register(file, image = false) {
       el,
       url,
       local: !demo,
+      file: demo ? null : file,
       image,
       thumb,
       name: demo ? "مقطع تجريبي" : file.name,
@@ -152,6 +162,7 @@ async function ingest(files, mode) {
     if (mode === "overlay")
       openPanel(document.querySelector("[data-panel=overlay]"));
     collect();
+    return true;
   } catch (e) {
     say(e.message);
     collect();
@@ -268,8 +279,26 @@ function imageRect(src, p, w, h) {
 }
 function drawImage(g, src, p, w, h) {
   const rect = imageRect(src, p, w, h);
+  g.save();
+  const x = (w * p.x) / 100,
+    y = (h * p.y) / 100;
+  g.translate(x, y);
+  g.rotate(((p.angle || 0) * Math.PI) / 180);
+  g.translate(-x, -y);
+  g.globalAlpha = (p.opacity ?? 100) / 100;
   g.drawImage(src, ...rect);
-  return rect.slice(4);
+  g.restore();
+  return alignedBounds(rect.slice(4), p.angle);
+}
+function alignedBounds(r, angle) {
+  if (!angle) return r;
+  const a = (angle * Math.PI) / 180,
+    c = Math.abs(Math.cos(a)),
+    s = Math.abs(Math.sin(a)),
+    [x, y, w, h] = r,
+    nw = c * w + s * h,
+    nh = c * h + s * w;
+  return [x + (w - nw) / 2, y + (h - nh) / 2, nw, nh];
 }
 const fonts = {
   sans: "Tahoma, sans-serif",
@@ -287,6 +316,8 @@ function drawText(g, l, p, w, h) {
   const width = Math.max(sz, ...lines.map((s) => g.measureText(s).width)),
     height = lines.length * sz * 1.35;
   g.translate((w * p.x) / 100, (h * p.y) / 100);
+  g.rotate(((p.angle || 0) * Math.PI) / 180);
+  g.globalAlpha = (p.opacity ?? 100) / 100;
   g.scale(p.w / 100, p.h / 100);
   g.fillStyle = l.color;
   if (l.effect === "shadow") {
@@ -305,12 +336,15 @@ function drawText(g, l, p, w, h) {
     g.fillText(s, 0, y);
   });
   g.restore();
-  return [
-    (w * p.x) / 100 - (width * p.w) / 200,
-    (h * p.y) / 100 - (height * p.h) / 200,
-    (width * p.w) / 100,
-    (height * p.h) / 100,
-  ];
+  return alignedBounds(
+    [
+      (w * p.x) / 100 - (width * p.w) / 200,
+      (h * p.y) / 100 - (height * p.h) / 200,
+      (width * p.w) / 100,
+      (height * p.h) / 100,
+    ],
+    p.angle,
+  );
 }
 let boxes = [];
 function compose(g, w, h, ix, t, exporting) {
@@ -350,15 +384,16 @@ function compose(g, w, h, ix, t, exporting) {
     }
   if (!exporting) {
     boxes = bounds;
-    if (!run && ["transform", "text", "overlay"].includes(panel)) {
+    if (!run && ["motionLab", "transform", "text", "overlay"].includes(panel)) {
       const b = bounds.find((b) => b.id === selected);
       if (b) {
+        window.MotionBench?.path(g, w, h);
         const [x, y, bw, bh] = b.r;
-        g.strokeStyle = "#ffb197";
+        g.strokeStyle = "#92e8ce";
         g.lineWidth = Math.max(1, w / 500);
         g.strokeRect(x, y, bw, bh);
         const z = Math.min(w, h) * 0.026;
-        g.fillStyle = "#ff916c";
+        g.fillStyle = "#6ce6bd";
         g.fillRect(x + bw - z / 2, y + bh - z / 2, z, z);
       }
     }
@@ -663,6 +698,7 @@ function syncLayers() {
   $("clipInfo").textContent = assets.get(pieces[active][3]).name;
   frameSize();
   layerPanel();
+  window.MotionBench?.refresh();
   paintRows();
 }
 function paintRows() {
@@ -678,10 +714,16 @@ function paintRows() {
     b.disabled = !!run;
     b.onclick = () => {
       const btn = document.querySelector(`[data-panel=${l.kind}]`);
-      if (panel !== l.kind) openPanel(btn);
+      if (panel !== "motionLab" && panel !== l.kind) openPanel(btn);
       selected = l.id;
-      move(clamp(l.start + 0.001, 0, total()));
+      move(visible(l, pos) ? pos : clamp(l.start + 0.001, 0, total()));
     };
+    for (let i = 0; i < l.tr.keys.length; i++) {
+      const mark = document.createElement("i");
+      mark.className = "keyDot";
+      mark.dataset.index = i;
+      b.append(mark);
+    }
     row.append(b);
     rows.append(row);
   }
@@ -725,10 +767,21 @@ function positionRows() {
     b.style.left = (a / w) * 100 + "%";
     b.style.width = Math.max(0, ((end - a) / w) * 100) + "%";
     b.hidden = end <= a;
+    for (const mark of b.querySelectorAll(".keyDot")) {
+      const k = l.tr.keys[+mark.dataset.index],
+        x = origin + (l.start + k.t) * px;
+      mark.hidden = x < a || x > end;
+      mark.style.left = x - a + "px";
+    }
+    rows.style.setProperty("--row-head", origin + px * pos + "px");
   }
 }
 function previewDown(e) {
-  if (run || picking || !["transform", "overlay", "text"].includes(panel))
+  if (
+    run ||
+    picking ||
+    !["motionLab", "transform", "overlay", "text"].includes(panel)
+  )
     return;
   const pt = canvasPoint(e),
     x = pt.x * fxCanvas.width,
@@ -738,7 +791,11 @@ function previewDown(e) {
     .reverse()
     .find(
       ({ id, r: [a, b, w, h] }) =>
-        (panel === "transform" ? !id : byId(id)?.kind === panel) &&
+        (panel === "motionLab"
+          ? id === selected
+          : panel === "transform"
+            ? !id
+            : byId(id)?.kind === panel) &&
         x >= a - rad &&
         x <= a + w + rad &&
         y >= b - rad &&
@@ -839,4 +896,3 @@ $("png").onclick = async () => {
   }
 };
 sync();
-ingest(["media/ridge.mp4"], "replace");
