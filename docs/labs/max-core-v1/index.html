@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><style>body{max-width:42rem;margin:2rem auto;padding:1rem;font:1.15rem/1.6 system-ui}button,input{font:inherit;margin:.25rem;padding:.4rem}output{display:block}</style><title>مختبر نقل MAX</title>
+  <h1>مختبر نقل مشروع اصطناعي</h1>
+  <p>
+    لا قراءة من مكتبة المحرر ولا كتابة إلى قاعدة بيانات. المخرجات بيانات مشروع،
+    لا فيديو.
+  </p>
+  <p>العينة الاصطناعية جاهزة تلقائيًا. جرّب تقسيم المقطع ثم تقديم طبقة العنوان ثم تنزيل النتيجة. لإعادة التجربة حدّث الصفحة.</p>
+  <input type="file" id="input" accept="application/json" /><button id="split">
+    قسّم cA</button
+  ><button id="order">قدّم طبقة العنوان</button
+  ><button id="key">أضف مفتاحًا للعنوان</button
+  ><button id="save">نزّل نسخة v1</button
+  ><output id="status"></output>
+  <script type="module">
+    import { openFixture } from "./adapter.mjs";
+    const el = (id) => document.getElementById(id),
+      schema = await (await fetch("./schema.json")).text();
+    let s = openFixture(schema, await (await fetch("./project.json")).text());
+    el("status").textContent=s.opened.ok ? "العينة جاهزة · المراجعة " + s.revision : s.opened.error;
+    el("input").onchange = async (e) => {
+      s = null;
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 2000000) {
+        el("status").textContent = "TOO_LARGE";
+        return;
+      }
+      s = openFixture(schema, await file.text());
+      el("status").textContent = s.opened.ok
+        ? "ready:" + s.revision
+        : "بقي الملف بلا تعديل: " + s.opened.error;
+    };
+    const commands = {
+      split: { op: "split", id: "cA", atUs: 3000000, rightId: "cB" },
+      order: { op: "order", ids: ["overlay", "title"] },
+      key: {
+        op: "putKey",
+        id: "title",
+        atUs: 750000,
+        value: {
+          x: 77,
+          y: 50,
+          w: 100,
+          h: 100,
+          angle: 0,
+          opacity: 100,
+          cropX: 0,
+          cropY: 0,
+        },
+      },
+    };
+    for (const [id, command] of Object.entries(commands))
+      el(id).onclick = () => {
+        if (!s?.opened.ok) return;
+        const r = s.edit({ ...command, expectedRevision: s.revision });
+        el("status").textContent = r.ok ? "edited:" + r.revision : r.error;
+      };
+    el("save").onclick = () => {
+      if (!s?.opened.ok) return;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(
+        new Blob([s.call("snapshot", null).value], {
+          type: "application/json",
+        }),
+      );
+      a.download = "synthetic-v1.json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    };
+  </script>
+</html>
