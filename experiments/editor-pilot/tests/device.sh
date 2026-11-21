@@ -9,3 +9,9 @@ adb shell am start -W -n "$pkg/io.github.obada0110.maxeditor.PilotView";adb shel
 # Bounded wait for real WebView to POST its report. No browser substitution.
 for i in $(seq 1 90);do test ! -s "$R/webview.json" || break;sleep 1;done;test -s "$R/webview.json"
 node "$L/tests/desktop.cjs" "$W" "$R" return;python "$L/tests/verify.py" "$R" chromium firefox webkit android webview returned
+# Separate monitor observation. A black frame is evidence against release, not an ignored test.
+if [[ ${RUN_PAUSED_PROBE:-0} == 1 ]]; then
+ mkdir -p "$R/monitor"; adb install -r "$P/ordinary-pilot.apk";adb push "$W/mx-land.mp4" /sdcard/Download/mx-land.mp4
+ adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/mx-land.mp4 >/dev/null
+ python "$L/tests/paused_probe.py" "$W" "$R/monitor" 2>&1 | tee "$R/monitor/probe.log"
+fi

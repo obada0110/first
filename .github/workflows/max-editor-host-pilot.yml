@@ -36,6 +36,8 @@ jobs:
       - name: Build actual Flutter host under lab application ID
         run: |
           R="$PWD/proof/records"; cd "$PILOT_DIR/max-motion/mobile"; flutter pub get && flutter gen-l10n && flutter build apk --debug 2>&1 |tee "$R/apk.log"
+          cp build/app/outputs/flutter-apk/app-debug.apk "$PILOT_DIR/ordinary-pilot.apk"
+          ffmpeg -v error -i "$PILOT_DIR/max-motion/pilot.webm" -c:v libx264 -pix_fmt yuv420p "$PILOT_DIR/max-motion/mx-land.mp4"
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
       - uses: actions/upload-artifact@v6
@@ -47,7 +49,7 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          script: bash experiments/editor-pilot/tests/device.sh
+          script: env RUN_PAUSED_PROBE=1 bash experiments/editor-pilot/tests/device.sh
       - name: Keep built core and browser fixture (no device SDK or user data)
         if: always()
         run: |

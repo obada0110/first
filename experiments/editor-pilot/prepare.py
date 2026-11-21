@@ -1,10 +1,10 @@
 """Materialize disposable hosts from the frozen Git tree, never from user storage."""
-import sys,subprocess,tarfile,io,shutil,tempfile
+import sys,subprocess,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]; LAB=Path(__file__).resolve().parent
 BASE='9fba216f7652eb7bef580ddd6b9a30da0283aefa'
 out=Path(sys.argv[1]).resolve();out.mkdir(parents=True,exist_ok=False)
-src=subprocess.check_output(['git','archive',BASE,'max-motion','experiments/max-core-kmp','experiments/max-integration'],cwd=ROOT);tarfile.open(fileobj=io.BytesIO(src)).extractall(out,filter='data')
+src=subprocess.check_output(['git','archive',BASE,'max-motion','experiments/max-core-kmp','experiments/max-integration'],cwd=ROOT);subprocess.run(['tar','-xf','-','-C',str(out)],input=src,check=True)
 def replace(p,a,b):
  t=p.read_text();assert t.count(a)==1,(p,a);p.write_text(t.replace(a,b))
 k=out/'experiments/max-core-kmp/src/commonMain/kotlin/core/Engine.kt';replace(k,'val args=when(op){','val args=when(op){"addClip"->setOf("clip");');replace(k,'val candidate=when(op){','''val candidate=when(op){

@@ -8,7 +8,7 @@ import 'package:max_editor/main.dart' as app;
 import 'package:max_editor/features/single/source_timeline.dart';
 
 void main(){IntegrationTestWidgetsFlutterBinding.ensureInitialized();testWidgets('real home, fixture route, timeline and native port', (t)async{
- const ch=MethodChannel('max_editor/fixture_pilot');final http=HttpClient();final states=[],views=[],timings=[];
+ const ch=MethodChannel('max_editor/fixture_pilot');final http=HttpClient();final states=[],views=[],timings=[],pairs=[];
  Future<Map> call(String method,d)async=>jsonDecode((await ch.invokeMethod<String>('call',jsonEncode({'api':2,'method':method,'data':d})))!);
  Future<String> raw()async=>(await call('snapshot',null))['value'] as String;
  Future<void> waitFor(bool Function() done)async{for(int i=0;i<200;i++){await t.pump(const Duration(milliseconds:30));if(done())return;}fail('timed out waiting for fixture UI');}
@@ -19,8 +19,10 @@ void main(){IntegrationTestWidgetsFlutterBinding.ensureInitialized();testWidgets
  final sw=Stopwatch()..start();await tap('op:$name');await waitFor(()=>status()=='$name:$rev');timings.add(sw.elapsedMicroseconds/1000);states.add(jsonDecode(await raw()));final v=t.widget<SourceTimeline>(find.byType(SourceTimeline));views.add({'name':v.name,'duration':v.duration,'start':v.start,'end':v.end});}
  await app.main();await t.pumpAndSettle();await route();await op('addClip',1);await op('trimRight',2,id:'intro',time:1500000);await op('split',3,id:'cA',time:2500000);await op('delete',4,id:'extra0');await op('order',5);await op('undo',6);await op('redo',7);
  final before=await raw();expect((await call('edit',{'op':'undo','expectedRevision':0}))['error'],'STALE_REVISION');expect(await raw(),before);
- await tap('op:save');await waitFor(()=>status()=='save:7');await t.pageBack();await t.pumpAndSettle();await route();await tap('op:restore');await waitFor(()=>status()=='restore:7');expect(await raw(),before);expect((await call('edit',{'op':'undo','expectedRevision':7}))['error'],'UNDO_EMPTY');
+ await tap('op:save');await waitFor(()=>status()=='save:7');
+ for(int i=0;i<10;i++){final w=Stopwatch()..start();await tap('op:order');await waitFor(()=>status()=='order:${8+2*i}');await tap('op:undo');await waitFor(()=>status()=='undo:${9+2*i}');pairs.add(w.elapsedMicroseconds/1000);}
+ await t.pageBack();await t.pumpAndSettle();await route();await tap('op:restore');await waitFor(()=>status()=='restore:7');expect(await raw(),before);expect((await call('edit',{'op':'undo','expectedRevision':7}))['error'],'UNDO_EMPTY');
  // This response is the browser's actual restored snapshot, not its expected vector.
  final res=await(await http.getUrl(Uri.parse('http://127.0.0.1:8974/handoff.json'))).close();expect(res.statusCode,200);final incoming=await utf8.decoder.bind(res).join();expect(jsonDecode(incoming),jsonDecode(before));final opened=jsonDecode((await ch.invokeMethod<String>('import',incoming))!);expect(opened['ok'],true);await ch.invokeMethod<String>('save');await tap('op:restore');await waitFor(()=>status()=='restore:7');await op('trimLeft',8,id:'intro',time:500000);await tap('op:save');await waitFor(()=>status()=='save:8');
- final req=await http.postUrl(Uri.parse('http://127.0.0.1:8974/result/android'));req.write(jsonEncode({'states':states,'views':views,'elapsed':timings,'restored':jsonDecode(before)}));expect((await req.close()).statusCode,200);http.close();
+ final req=await http.postUrl(Uri.parse('http://127.0.0.1:8974/result/android'));final body=utf8.encode(jsonEncode({'states':states,'views':views,'elapsed':timings,'samples':pairs,'restored':jsonDecode(before)}));req.contentLength=body.length;req.add(body);expect((await req.close()).statusCode,200);http.close();
  },timeout:const Timeout(Duration(minutes:5)));}
