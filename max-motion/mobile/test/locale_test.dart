@@ -29,6 +29,8 @@ void main() {
     final controller = LocaleController(prefs);
     await controller.restore();
     await tester.pumpWidget(MaxEditorApp(controller: controller));
+    await tester.tap(find.byKey(const ValueKey('settings')));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
     TextDirection direction(String title) => Directionality.of(tester.element(find.text(title)));
     expect(direction('الإعدادات'), TextDirection.rtl);
@@ -47,6 +49,8 @@ void main() {
   testWidgets('Storage failure keeps the old language and reports in that language', (tester) async {
     final prefs = MemoryPreferences()..fail = true;
     await tester.pumpWidget(MaxEditorApp(controller: LocaleController(prefs)));
+    await tester.tap(find.byKey(const ValueKey('settings')));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('en')));
     await tester.pumpAndSettle();

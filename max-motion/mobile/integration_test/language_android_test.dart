@@ -13,6 +13,8 @@ void main() {
     try {
       await app.main();
       await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings')));
+    await tester.pumpAndSettle();
       for (final tag in ['ar', 'en', 'ar']) {
         await tester.tap(find.byKey(ValueKey(tag)));
         await tester.pumpAndSettle();

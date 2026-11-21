@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../features/settings/settings_screen.dart';
+import '../features/single/single_screen.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'locale_controller.dart';
 
@@ -20,7 +20,7 @@ class MaxEditorApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6CE6BD), brightness: Brightness.dark),
         useMaterial3: true,
       ),
-      home: SettingsScreen(controller: controller),
+      home: SingleScreen(controller: controller),
     ),
   );
 }

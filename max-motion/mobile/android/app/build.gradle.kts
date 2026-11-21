@@ -28,8 +28,18 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
+    sourceSets.getByName("main") {
+        java.srcDirs("../../../contract/kotlin", "../../../contract/android")
+        assets.srcDir("../../../contract/schema")
+    }
+}
 
-
+dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    val media3 = "1.6.1"
+    implementation("androidx.media3:media3-exoplayer:$media3")
+    implementation("androidx.media3:media3-ui:$media3")
+    implementation("androidx.media3:media3-transformer:$media3")
 }
 
 flutter {
