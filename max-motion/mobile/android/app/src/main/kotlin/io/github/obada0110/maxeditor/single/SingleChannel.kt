@@ -43,7 +43,7 @@ class SingleChannel(private val a:Activity,e:FlutterEngine) {
                     else->r.notImplemented()
                 }}
             }
-        }catch(ex:Exception){r.error("unavailable",null,null)}}
+        }catch(ex:Exception){android.util.Log.w("MaxVideo",call.method,ex);r.error("unavailable",ex.javaClass.simpleName,null)}}
     }
     private fun pick(code:Int,intent:Intent,r:MethodChannel.Result){player.pause();a.startActivityForResult(intent,code);pending=r}
     fun result(code:Int,status:Int,data:Intent?){if(code !in 710..711)return;val r=pending?:return;pending=null;val selected=data?.data;if(status!=Activity.RESULT_OK || selected==null){r.success(null);return};try{if(code==711){startExport(selected);r.success(null)}else load(selected,r)}catch(ex:Exception){r.error("invalid",null,null)}}
@@ -57,7 +57,7 @@ class SingleChannel(private val a:Activity,e:FlutterEngine) {
         }catch(ex:Exception){if(acquired && selected!=null)runCatching{context.contentResolver.releasePersistableUriPermission(selected,1)};a.runOnUiThread{working=false;if(!closed){if(selected==null){p=project;info=null;issue=if(project!=null)"missing" else "save"};r.error(if(selected!=null)"invalid" else issue,null,null)}}}
     }}
     private fun startExport(tree:Uri?){val clip=Clock.clips(requireNotNull(p)).single();exporter.start(requireNotNull(uri),clip.n("inUs"),clip.n("outUs"),requireNotNull(info),tree)}
-    private fun state():Map<String,Any?> {val clip=p?.let{Clock.clips(it).single()};return mapOf("name" to p?.s("name"),"revision" to p?.n("revision"),"from" to clip?.n("inUs"),"to" to clip?.n("outUs"),"duration" to info?.duration,"w" to info?.displayWidth,"h" to info?.displayHeight,"rot" to info?.rotation,"fps" to info?.rate,"audio" to info?.audio,"position" to player.currentPosition*1000,"playing" to player.isPlaying,"issue" to issue,"export" to exporter.state,"percent" to exporter.percent(),"destination" to exporter.destination)}
+    private fun state():Map<String,Any?> {val clip=p?.let{Clock.clips(it).single()};return mapOf("working" to working,"name" to p?.s("name"),"revision" to p?.n("revision"),"from" to clip?.n("inUs"),"to" to clip?.n("outUs"),"duration" to info?.duration,"w" to info?.displayWidth,"h" to info?.displayHeight,"rot" to info?.rotation,"fps" to info?.rate,"audio" to info?.audio,"position" to player.currentPosition*1000,"playing" to player.isPlaying,"issue" to issue,"export" to exporter.state,"percent" to exporter.percent(),"destination" to exporter.destination)}
     fun pause(){player.pause()}
     fun close(){closed=true;channel.setMethodCallHandler(null);player.release();exporter.close();io.shutdown()}
 }
