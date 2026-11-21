@@ -16,7 +16,7 @@ jobs:
         working-directory: max-motion/mobile
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -27,7 +27,15 @@ jobs:
       - run: python3 tool/preflight.py
       - run: flutter pub get && flutter gen-l10n
       - run: flutter analyze && flutter test
-      - run: flutter build apk --debug
+      - name: Build the phase-one Android APK
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! flutter build apk --debug 2>&1 | tee "$RUNNER_TEMP/android-build.log"; then
+            # Publish the relevant Gradle/compiler diagnostic as a check annotation too.
+            python3 tool/build_diagnostic.py "$RUNNER_TEMP/android-build.log"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: max-editor-foundation-debug
