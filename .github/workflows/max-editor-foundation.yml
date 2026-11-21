@@ -55,7 +55,7 @@ jobs:
       - name: Analyze and run Flutter tests
         run: |
           set -o pipefail
-          (flutter analyze && flutter test) 2>&1 | tee "$RUNNER_TEMP/flutter-check.log" || { python3 tool/build_diagnostic.py "$RUNNER_TEMP/flutter-check.log"; exit 1; }
+          (flutter analyze && flutter test --fail-fast --reporter expanded) 2>&1 | tee "$RUNNER_TEMP/flutter-check.log" || { python3 tool/build_diagnostic.py "$RUNNER_TEMP/flutter-check.log"; exit 1; }
       - name: Build single-source Android APK
         shell: bash
         run: |
@@ -88,6 +88,11 @@ jobs:
             flutter test --no-pub integration_test/language_android_test.dart -d emulator-5554
             bash -o pipefail -c 'cd android && ./gradlew :contractCheck:connectedDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/contract-gradle.log" || { python3 ../tool/build_diagnostic.py "$RUNNER_TEMP/contract-gradle.log"; exit 1; }'
             bash tool/single_qa/device.sh
+      - name: Include Flutter identity matrix in the review logs
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/single-qa/evidence" "$RUNNER_TEMP/single-qa/fixtures"
+          if [ -f "$RUNNER_TEMP/flutter-check.log" ]; then cp "$RUNNER_TEMP/flutter-check.log" "$RUNNER_TEMP/single-qa/evidence/flutter-tests.log"; fi
       - name: Keep source, output clips, screenshots and logs
         if: always()
         uses: actions/upload-artifact@v6
