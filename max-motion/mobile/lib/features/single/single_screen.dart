@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../app/locale_controller.dart';
 import '../../app/design/max_theme.dart';
 import 'source_timeline.dart';
+import 'source_monitor.dart';
 import 'project_library.dart';
 
 import '../../l10n/generated/app_localizations.dart';
@@ -445,13 +446,7 @@ class _SingleState extends State<SingleScreen> {
         ],
       ),
     );
-    Widget monitor() => ColoredBox(
-      color: Colors.black,
-      child: const AndroidView(
-        key: ValueKey('monitor'),
-        viewType: 'max_editor/preview',
-      ),
-    );
+    Widget monitor() => const SourceMonitor(key: ValueKey('monitor'));
     Widget transport() => Row(
       children: [
         IconButton(
