@@ -3,6 +3,15 @@ import os, sys, time, subprocess, json
 from pathlib import Path
 from contextlib import contextmanager
 os.environ['QA']=str(Path.cwd()); sys.path.insert(0,'max-motion/mobile/tool/single_qa');from host import adb, find, tap, pick
+# The first UI hierarchy may not exist yet while the activity is starting.
+import host
+read_nodes=host.nodes
+def ready_nodes():
+    for i in range(8):
+        try:return read_nodes()
+        except (subprocess.CalledProcessError,ValueError):time.sleep(.6)
+    return read_nodes()
+host.nodes=ready_nodes
 out=Path('capture');out.mkdir(exist_ok=True)
 def snap(n): (out/(n+'.png')).write_bytes(adb('exec-out','screencap','-p'))
 @contextmanager
