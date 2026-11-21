@@ -56,6 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
             ]),
           )),
+          const SizedBox(height:24),Text(text.about,style:Theme.of(context).textTheme.titleMedium),const Divider(),Text(text.versionLabel),const SizedBox(height:8),Text(text.localHint),
         ]),
       ))),
     );

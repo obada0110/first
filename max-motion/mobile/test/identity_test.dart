@@ -33,6 +33,7 @@ void main(){
           });
           messenger.setMockMethodCallHandler(SystemChannels.platform_views,(c) async=>c.method=='create'?0:null);
           final ctrl=LocaleController(_Prefs(lang));await ctrl.restore();await t.pumpWidget(MaxEditorApp(controller:ctrl));await t.pump();await t.pump();
+          final resume=find.byKey(const ValueKey('resume'));await t.ensureVisible(resume);await t.tap(resume);await t.pump();
           final clock=find.byKey(const ValueKey('source-clock'));
           expect(Directionality.of(t.element(clock)),TextDirection.ltr);
           final ctx=t.element(find.byKey(const ValueKey('settings')));
@@ -46,10 +47,14 @@ void main(){
           await t.ensureVisible(clock);await t.pump();final rect=t.getRect(clock);
           for(final frac in [.2,.8]){await t.tapAt(Offset(rect.left+rect.width*frac,rect.center.dy));await t.pump();}
           expect(seeks.length,2);expect(seeks[1],greaterThan(seeks[0]));
-          for(final label in (lang=='ar'?['حفظ النطاق','تصدير الجزء المحدد']:['Save range','Export selection'])){
-            final button=find.text(label);await t.ensureVisible(button);await t.pump();expect(button.hitTestable(),findsOneWidget);
-            final r=t.getRect(button);expect(r.left,greaterThanOrEqualTo(0));expect(r.right,lessThanOrEqualTo(size.width));
-          }
+          final clip=find.byKey(const ValueKey('clip'));await t.ensureVisible(clip);await t.tap(clip);await t.pump();
+          expect(find.text(lang=='ar'?'خصائص المقطع':'Clip properties'),findsOneWidget);
+          final preview=find.byKey(const ValueKey('monitor'));
+          final before=t.getRect(preview);
+          final save=find.text(lang=='ar'?'حفظ النطاق':'Save range');await t.ensureVisible(save);await t.pump();
+          expect(t.getRect(preview),before);
+          final export=find.byKey(const ValueKey('review-export'));await t.tap(export);await t.pump();
+          expect(find.text(lang=='ar'?'تصدير الجزء المحدد':'Export selection'),findsOneWidget);
           expect(t.takeException(),isNull);await t.pumpWidget(const SizedBox());await t.pump();ctrl.dispose();messenger.setMockMethodCallHandler(api,null);messenger.setMockMethodCallHandler(SystemChannels.platform_views,null);
         });
       }
