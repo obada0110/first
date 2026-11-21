@@ -15,18 +15,18 @@ jobs:
       TAG: android-identity-44912061336
       BUNDLE: MAX-EDITOR-Android-0.2.0-build2.zip
     steps:
-      - name: Extract the previously tested files and verify both downloads
+      - name: Compress only the verified installer and check the published download
         shell: bash
         run: |
           set -euo pipefail
           gh release download "$TAG" -p "$BUNDLE"
-          unzip -j "$BUNDLE" MAX-EDITOR/apk/MAX-EDITOR.apk MAX-EDITOR/Android-Identity-AR.pdf
+          unzip -j "$BUNDLE" MAX-EDITOR/apk/MAX-EDITOR.apk
           echo '2eec42d8c022ddda1d2c4ef1272173257594307953bd05594a40320e38d14d1a  MAX-EDITOR.apk' | sha256sum -c -
-          echo '7f82a381b0ae0075741290bdb4fdfe4572fcf59b70ec3a3492b570ed7116bb43  Android-Identity-AR.pdf' | sha256sum -c -
-          zip -q MAX-EDITOR-Report-AR.zip Android-Identity-AR.pdf
-          unzip -tqq MAX-EDITOR-Report-AR.zip
-          test "$(unzip -Z1 MAX-EDITOR-Report-AR.zip)" = Android-Identity-AR.pdf
-          gh release upload "$TAG" MAX-EDITOR.apk MAX-EDITOR-Report-AR.zip
-          gh release download "$TAG" -p MAX-EDITOR.apk -p MAX-EDITOR-Report-AR.zip -D verified
-          cmp MAX-EDITOR.apk verified/MAX-EDITOR.apk
-          cmp MAX-EDITOR-Report-AR.zip verified/MAX-EDITOR-Report-AR.zip
+          archive=MAX-EDITOR-APK-only.zip
+          zip -9q "$archive" MAX-EDITOR.apk
+          test "$(unzip -Z1 "$archive")" = MAX-EDITOR.apk
+          gh release upload "$TAG" "$archive"
+          gh release download "$TAG" -p "$archive" -D verified
+          cmp "$archive" "verified/$archive"
+          unzip -tqq "verified/$archive"
+          unzip -p "verified/$archive" MAX-EDITOR.apk | cmp - MAX-EDITOR.apk
