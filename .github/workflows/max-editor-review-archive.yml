@@ -1,0 +1,58 @@
+name: Package one MAX EDITOR review archive
+on:
+  push:
+    branches: ['arena/bff96530-first']
+    paths: ['.github/workflows/max-editor-review-archive.yml']
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_APK_TAG: single-preview-44895793489
+      APK_COMMIT: aa4db1035ab4d2674eb23cf8c621a5a260984e0e
+      FILE: MAX-EDITOR-Review.zip
+    steps:
+      - uses: actions/checkout@v5
+      - name: Assemble the design kit and the existing tested Android baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/package/MAX-EDITOR-Review"
+          mkdir -p "$dir/android-baseline" "$dir/design"
+          cp -R design/max-editor/brand-product-v1/{assets,boards,evidence,models,source,templates} "$dir/design/"
+          cp design/max-editor/brand-product-v1/{*.pdf,*.html,README.md} "$dir/design/"
+          gh release download "$SOURCE_APK_TAG" --pattern 'MAX-EDITOR-single-debug.apk' --dir "$dir/android-baseline"
+          apk="$dir/android-baseline/MAX-EDITOR-single-debug.apk"
+          test "$(stat -c %s "$apk")" = 149048492
+          unzip -tqq "$apk"
+          unzip -Z1 "$apk" > "$RUNNER_TEMP/apk-entries"
+          grep -Fxq AndroidManifest.xml "$RUNNER_TEMP/apk-entries"
+          grep -Fxq classes.dex "$RUNNER_TEMP/apk-entries"
+          git fetch --depth=1 origin "$APK_COMMIT"
+          mkdir "$dir/android-baseline/source"
+          git archive "$APK_COMMIT" max-motion/mobile max-motion/contract .github/workflows/max-editor-foundation.yml | tar -x -C "$dir/android-baseline/source"
+          cat > "$dir/START-HERE.txt" <<'NOTE'
+          MAX EDITOR — حزمة المراجعة الموحّدة
+          ابدأ بـ design/MAX-EDITOR-Brand-Product-v1.pdf أو افتح design/index.html بعد فك الضغط.
+          لمقارنة الخطين ونتائج اختبار الشاشات الصغيرة: design/MAX-EDITOR-Typography-Review.pdf.
+          ملفات التصميم والخطوط وتراخيصها والأصول والأدلة ضمن design/.
+          android-baseline/ يحتوي على APK تجريبي منشور سابقاً ومصدره. لا يعرض تصميم Tajawal الجديد، ولم يُنشأ APK جديد ضمن مهمة التصميم. تثبيته غير مطلوب لمراجعة التصميم.
+          مصدر APK: single-preview-44895793489 / aa4db1035ab4d2674eb23cf8c621a5a260984e0e
+          SHA256SUMS.txt يسجل بصمة كل ملف من محتويات التسليم.
+          NOTE
+          cd "$dir"
+          find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          cd .. && zip -q -r "$RUNNER_TEMP/$FILE" MAX-EDITOR-Review
+          mkdir "$RUNNER_TEMP/verify"; cd "$RUNNER_TEMP/verify"
+          unzip -tqq "$RUNNER_TEMP/$FILE" && unzip -q "$RUNNER_TEMP/$FILE"
+          cd MAX-EDITOR-Review; sha256sum --check --quiet SHA256SUMS.txt
+          for f in design/{MAX-EDITOR-Brand-Product-v1.pdf,MAX-EDITOR-Typography-Review.pdf,index.html,report.html,assets/icons.svg,assets/tokens.json,assets/type/tajawal/{Tajawal-{Regular,Medium,Bold}.ttf,OFL.txt},evidence/typography/{Tajawal.png,Plex.png,results.json}} android-baseline/MAX-EDITOR-single-debug.apk; do test -s "$f"; done
+      - name: Publish verified ZIP only
+        run: |
+          tag="max-editor-review-${GITHUB_RUN_ID}"
+          gh release create "$tag" "$RUNNER_TEMP/$FILE" --target "$GITHUB_SHA" --prerelease --title 'MAX EDITOR — حزمة المراجعة الموحّدة' --notes 'Design sources, PDFs, licensed fonts, visual evidence and the previously tested debug APK. No new app build.'
+          gh release download "$tag" -p "$FILE" --dir "$RUNNER_TEMP/published"
+          cmp "$RUNNER_TEMP/$FILE" "$RUNNER_TEMP/published/$FILE"
