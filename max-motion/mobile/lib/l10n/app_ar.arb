@@ -1,0 +1,9 @@
+{
+  "@@locale": "ar",
+  "appTitle": "MAX EDITOR",
+  "settings": "الإعدادات",
+  "language": "لغة التطبيق",
+  "languageName": "العربية",
+  "settingsHint": "اختر لغة العرض. يُحفظ اختيارك على هذا الجهاز.",
+  "saveFailed": "لم تُحفظ اللغة. أعد المحاولة."
+}

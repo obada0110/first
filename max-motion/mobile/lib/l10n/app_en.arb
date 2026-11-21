@@ -1,0 +1,10 @@
+{
+  "@@locale": "en",
+  "appTitle": "MAX EDITOR",
+  "settings": "Settings",
+  "language": "App language",
+  "languageName": "English",
+  "@languageName": {"description": "Name of this language in its own writing system."},
+  "settingsHint": "Choose a display language. Your preference stays on this device.",
+  "saveFailed": "Could not save the language. Please try again."
+}
