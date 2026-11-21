@@ -1,0 +1,31 @@
+name: Publish verified workspace review downloads
+on:
+  push:
+    branches: ['arena/bff96530-first']
+    paths: ['.github/workflows/max-editor-workspace-review.yml']
+permissions:
+  contents: write
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: single-preview-44918153397
+      REVIEW: MAX-EDITOR-Workspace-0.3.0-review.zip
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify that the installable and the optional compressed installer are identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download "$TAG" -p MAX-EDITOR-single-debug.apk
+          apk=MAX-EDITOR-single-debug.apk
+          test "$(unzip -p "deliveries/$REVIEW" qa/evidence/identity.json | jq -r .apkSha256)" = "$(sha256sum "$apk" | cut -d' ' -f1)"
+          unzip -tqq "deliveries/$REVIEW"
+          zip -9q MAX-EDITOR-0.3.0-APK.zip "$apk"; unzip -tqq MAX-EDITOR-0.3.0-APK.zip
+          test "$(unzip -Z1 MAX-EDITOR-0.3.0-APK.zip)" = "$apk"
+          gh release upload "$TAG" MAX-EDITOR-0.3.0-APK.zip "deliveries/$REVIEW"
+          gh release download "$TAG" -p MAX-EDITOR-0.3.0-APK.zip -p "$REVIEW" -D published
+          unzip -p published/MAX-EDITOR-0.3.0-APK.zip "$apk" | cmp - "$apk"
+          cmp "published/$REVIEW" "deliveries/$REVIEW"
