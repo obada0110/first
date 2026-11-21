@@ -76,6 +76,8 @@ void main() {
           await t.pump();
           final resume = find.byKey(const ValueKey('resume'));
           await t.ensureVisible(resume);
+          await t.pump();
+          expect(resume.hitTestable(), findsOneWidget);
           await t.tap(resume);
           await t.pump();
           final clock = find.byKey(const ValueKey('source-clock'));
@@ -119,6 +121,7 @@ void main() {
           expect(seeks[1], greaterThan(seeks[0]));
           final clip = find.byKey(const ValueKey('clip'));
           await t.ensureVisible(clip);
+          await t.pump();
           await t.tap(clip);
           await t.pump();
           expect(

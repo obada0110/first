@@ -18,6 +18,29 @@ class ProjectLibrary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context), type = Theme.of(context).textTheme;
+    final recent = <Widget>[
+      Text(t.recent, style: type.titleMedium),
+      const SizedBox(height: 8),
+      MxPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(name ?? t.noProject, style: type.titleMedium),
+            Text(
+              name == null ? t.noHint : range,
+              textDirection: name == null ? null : TextDirection.ltr,
+            ),
+            if (onResume != null)
+              OutlinedButton.icon(
+                key: const ValueKey('resume'),
+                onPressed: onResume,
+                icon: const MxIcon('play'),
+                label: Text(t.resume),
+              ),
+          ],
+        ),
+      ),
+    ];
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
       children: [
@@ -38,6 +61,7 @@ class ProjectLibrary extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
+                if (name != null) ...[...recent, const SizedBox(height: 16)],
                 MxPanel(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,24 +81,7 @@ class ProjectLibrary extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(t.recent, style: type.titleMedium),
-                const SizedBox(height: 8),
-                MxPanel(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name ?? t.noProject, style: type.titleMedium),
-                      Text(name == null ? t.noHint : range),
-                      if (onResume != null)
-                        OutlinedButton.icon(
-                          key: const ValueKey('resume'),
-                          onPressed: onResume,
-                          icon: const MxIcon('play'),
-                          label: Text(t.resume),
-                        ),
-                    ],
-                  ),
-                ),
+                if (name == null) ...recent,
                 if (status.isNotEmpty)
                   Text(status, style: const TextStyle(color: Mx.error)),
                 const SizedBox(height: 24),

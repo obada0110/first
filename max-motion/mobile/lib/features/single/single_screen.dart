@@ -278,7 +278,7 @@ class _SingleState extends State<SingleScreen> {
       });
     }
 
-    Widget inspector() {
+    Widget inspector({bool scroll = true}) {
       final dirty = start.text != ms(a) || end.text != ms(b);
       Widget field(TextEditingController c, String label) => TextField(
         controller: c,
@@ -288,7 +288,7 @@ class _SingleState extends State<SingleScreen> {
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         decoration: InputDecoration(labelText: label),
       );
-      return SingleChildScrollView(
+      final body = Padding(
         key: ValueKey(tool),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -415,6 +415,9 @@ class _SingleState extends State<SingleScreen> {
           ],
         ),
       );
+      return scroll
+          ? SingleChildScrollView(key: ValueKey(tool), child: body)
+          : body;
     }
 
     Widget rail() => SingleChildScrollView(
@@ -562,16 +565,10 @@ class _SingleState extends State<SingleScreen> {
                   children: [
                     rail(),
                     Expanded(
-                      child: ListView(
-                        children: [
-                          timeline(),
-                          SizedBox(
-                            height: (box.maxHeight * .65)
-                                .clamp(180, 650)
-                                .toDouble(),
-                            child: inspector(),
-                          ),
-                        ],
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [timeline(), inspector(scroll: false)],
+                        ),
                       ),
                     ),
                   ],
@@ -594,15 +591,14 @@ class _SingleState extends State<SingleScreen> {
                 builder: (_, inner) {
                   if (inner.maxHeight < 320 ||
                       MediaQuery.textScalerOf(ctx).scale(1) > 1.5) {
-                    return ListView(
-                      children: [
-                        rail(),
-                        timeline(),
-                        SizedBox(
-                          height: inner.maxHeight.clamp(220, 600).toDouble(),
-                          child: inspector(),
-                        ),
-                      ],
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          rail(),
+                          timeline(),
+                          inspector(scroll: false),
+                        ],
+                      ),
                     );
                   }
                   return Column(
