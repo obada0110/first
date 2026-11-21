@@ -10,6 +10,8 @@ class Host(SimpleHTTPRequestHandler):
   n=int(self.headers['Content-Length']);assert 0<n<2000000
   raw=self.rfile.read(n);json.loads(raw);
   if self.path=='/result/android':
+   checkpoint=subprocess.check_output(['adb','exec-out','run-as','lab.maxeditor.hostpilot','cat','files/pilot-v2.json'],timeout=15)
+   json.loads(checkpoint);(proof/'android-file.json').write_bytes(checkpoint)
    (proof/'flutter-pilot.png').write_bytes(subprocess.check_output(['adb','exec-out','screencap','-p'],timeout=15))
   (proof/(self.path.split('/')[-1]+'.json')).write_bytes(raw);self.send_response(200);self.end_headers()
 ThreadingHTTPServer(('127.0.0.1',8974),Host).serve_forever()
