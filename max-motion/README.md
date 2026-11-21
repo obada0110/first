@@ -11,3 +11,6 @@ The Pages artifact is `docs/max-motion/index.html`. For each new test, copy the 
 
 ## Test 02 — non-destructive timeline cuts
 The current standalone page and Pages mirror supersede Test 01. Import the full source, scrub left-to-right and cut the selected piece. Split preserves both sides; trim left/right drops the earlier/later side of that piece only. Delete closes the gap; up to 100 undo snapshots restore the edit and cursor. Preview and export play the surviving source intervals in order, coalescing adjacent intervals and pausing the recorder across skipped sections. Original media is never modified. `test01.json` remains the historical first browser prototype.
+
+## Test 03 — per-piece effects
+`effects.js` is the local shader/parameter catalog. Publish it alongside `index.html` in `docs/max-motion/`; no CDN or external model is required. Edits are per piece, compose in a fixed order, inherit on split and share the edit undo stack. Compare-original is a preview control only. Effects require WebGL; with no effects the existing video/canvas path stays available. See FEATURE-REVIEW.md for the reference review and the reproducible fixture/browser/decoder checks.
