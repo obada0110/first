@@ -1,4 +1,4 @@
-# Max Motion — test 01
+# Max Motion — browser editor
 
 Personal Android video editor, target device POCO X5 Pro. Target final product: less than 100 MB initial download; 1080p/60 export subject to device tests. Each milestone must be tried on the phone before increasing scope. Node Video is a reference for effects, not a requirement to copy a node graph. Requested: glow, rain, motion (exact interpretation pending), light frost, fifth effect TBD.
 
@@ -14,3 +14,8 @@ The current standalone page and Pages mirror supersede Test 01. Import the full 
 
 ## Test 03 — per-piece effects
 `effects.js` is the local shader/parameter catalog. Publish it alongside `index.html` in `docs/max-motion/`; no CDN or external model is required. Edits are per piece, compose in a fixed order, inherit on split and share the edit undo stack. Compare-original is a preview control only. Effects require WebGL; with no effects the existing video/canvas path stays available. See FEATURE-REVIEW.md for the reference review and the reproducible fixture/browser/decoder checks.
+
+## Test 04 — phone editing workspace
+One preview, transport strip, horizontal tool shelf, contextual drawer and thumbnail timeline. The six-second bundled silent demo is an AI-generated landscape animated with a slow push-in; it is a real editable video. Import via + or الوسائط to replace it with one local file (replacing clears the session). Tap the ruler or filmstrip to position the playhead and select its piece. At fit zoom, drag to scrub; at higher zoom, drag to scroll time under the playhead. Use the arrows or Home/End with the focused timeline for keyboard editing.
+
+Deploy `index.html`, `studio.css`, `editor.js`, `studio.js`, `effects.js` and `media/` together. The updated `tests/effects.cjs` drives the visible categories before checking the ten tools on a simulated 393px touch viewport. Test 04 changes the interface, not the export resolution or layer limit.
