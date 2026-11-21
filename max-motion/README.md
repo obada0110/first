@@ -8,3 +8,6 @@ Next test: compare preview smoothness with 1, 4, 7, 8 overlays on the same sourc
 
 ## Direct static hosting (no LiveCodes or preview gateway)
 The Pages artifact is `docs/max-motion/index.html`. For each new test, copy the updated standalone page there and verify it is byte-identical to `max-motion/index.html`. Preserve the other app at `docs/index.html`. In repository Settings → Pages, select Deploy from a branch, `arena/bff96530-first`, `/docs`. Use the Pages dashboard's published base URL plus `max-motion/`. A commit alone does not enable Pages.
+
+## Test 02 — non-destructive timeline cuts
+The current standalone page and Pages mirror supersede Test 01. Import the full source, scrub left-to-right and cut the selected piece. Split preserves both sides; trim left/right drops the earlier/later side of that piece only. Delete closes the gap; up to 100 undo snapshots restore the edit and cursor. Preview and export play the surviving source intervals in order, coalescing adjacent intervals and pausing the recorder across skipped sections. Original media is never modified. `test01.json` remains the historical first browser prototype.
