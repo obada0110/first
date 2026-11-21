@@ -1,0 +1,1 @@
+Upstream: https://github.com/google/fonts/tree/20776328c5a501f52fe9553fc5997451b4667589/ofl/tajawal

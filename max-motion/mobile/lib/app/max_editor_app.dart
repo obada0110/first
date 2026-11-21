@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../features/single/single_screen.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'locale_controller.dart';
+import 'design/max_theme.dart';
 
 class MaxEditorApp extends StatelessWidget {
   const MaxEditorApp({super.key, required this.controller});
@@ -16,10 +17,7 @@ class MaxEditorApp extends StatelessWidget {
       locale: controller.locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6CE6BD), brightness: Brightness.dark),
-        useMaterial3: true,
-      ),
+      theme: Mx.theme,
       home: SingleScreen(controller: controller),
     ),
   );

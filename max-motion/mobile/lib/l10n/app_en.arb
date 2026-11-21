@@ -41,5 +41,9 @@
   "sourceDetails": "{w} × {h} · {rotation}° · {rate} · {audio}",
   "positionTime": "{label}: {pos} / {total} s",
   "selectedTime": "{label}: {seconds} s",
-  "sourceRate": "{rate} fps"
+  "sourceRate": "{rate} fps",
+  "newProject": "New project",
+  "timeline": "Timeline",
+  "properties": "Clip properties",
+  "preview": "Preview"
 }

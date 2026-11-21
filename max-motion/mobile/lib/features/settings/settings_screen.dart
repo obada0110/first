@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/locale_controller.dart';
+import '../../app/design/max_theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -33,16 +34,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final text = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(text.appTitle)),
+      appBar: AppBar(title: const BrandMark()),
       body: SafeArea(child: Center(child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 600),
-        child: ListView(padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 24), children: [
-          Text(text.settings, style: Theme.of(context).textTheme.headlineMedium),
+        child: ListView(padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24), children: [
+          Text(text.settings, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           Text(text.settingsHint),
           const SizedBox(height: 24),
           Semantics(header: true, child: Text(text.language, style: Theme.of(context).textTheme.titleMedium)),
-          RadioGroup<Locale>(
+          MxPanel(child: RadioGroup<Locale>(
             groupValue: widget.controller.locale,
             onChanged: _select,
             child: Column(children: [
@@ -54,7 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(lookupAppLocalizations(locale).languageName),
                 ),
             ]),
-          ),
+          )),
         ]),
       ))),
     );

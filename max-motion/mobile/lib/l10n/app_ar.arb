@@ -38,5 +38,9 @@
   "sourceDetails": "{w} × {h} · {rotation}° · {rate} · {audio}",
   "positionTime": "{label}: {pos} / {total} s",
   "selectedTime": "{label}: {seconds} s",
-  "sourceRate": "{rate} fps"
+  "sourceRate": "{rate} fps",
+  "newProject": "مشروع جديد",
+  "timeline": "الخط الزمني",
+  "properties": "خصائص المقطع",
+  "preview": "المعاينة"
 }
