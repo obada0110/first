@@ -1,0 +1,42 @@
+00:00 +0: loading /home/runner/work/first/first/max-motion/mobile/integration_test/single_android_test.dart
+Running Gradle task 'assembleDebug'...                             13.1s
+✓ Built build/app/outputs/flutter-apk/app-debug.apk
+Installing build/app/outputs/flutter-apk/app-debug.apk...          975ms
+00:00 +0: real SAF, playback, selection, exports, cancellation and errors
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: <200>
+  Actual: <500>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure>.host (file:///home/runner/work/first/first/max-motion/mobile/integration_test/single_android_test.dart:12:148)
+<asynchronous suspension>
+#5      main.<anonymous closure> (file:///home/runner/work/first/first/max-motion/mobile/integration_test/single_android_test.dart:33:7)
+<asynchronous suspension>
+#6      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#7      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///home/runner/work/first/first/max-motion/mobile/integration_test/single_android_test.dart line 12
+The test description was:
+  real SAF, playback, selection, exports, cancellation and errors
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:39 +0 -1: real SAF, playback, selection, exports, cancellation and errors [E]
+  Test failed. See exception logs above.
+  The test description was: real SAF, playback, selection, exports, cancellation and errors
+  
+opening mx-land.mp4
+
+opening mx-tall.mp4
+
+opening mx-bad.mp4
+
+opening MAX-f0f5f161-ac1c-40d8-b926-7e7f736f3759.mp4
+
+opening MAX-b4be9548-55dd-4e78-81cc-80ab45b24b39.mp4
+00:39 +0 -1: (tearDownAll)
+00:39 +0 -1: Some tests failed.
