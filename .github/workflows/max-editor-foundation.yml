@@ -1,0 +1,129 @@
+name: MAX EDITOR Android foundation
+on:
+  push:
+    paths:
+      - 'max-motion/mobile/**'
+      - 'max-motion/contract/kotlin/**'
+      - 'max-motion/contract/android/**'
+      - 'max-motion/contract/schema/**'
+      - 'max-motion/contract/fixtures/**'
+      - 'max-motion/contract/tests/**'
+      - '.github/workflows/max-editor-foundation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract-data:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate interchange schema and fixture
+        run: |
+          python3 -m venv "$RUNNER_TEMP/schema-env"
+          "$RUNNER_TEMP/schema-env/bin/pip" install 'jsonschema>=4,<5'
+          "$RUNNER_TEMP/schema-env/bin/python" max-motion/contract/tests/schema_test.py
+      - name: Compare real browser edit path with contract vectors
+        run: |
+          if ! command -v ffmpeg >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y ffmpeg; fi
+          npm install --prefix "$RUNNER_TEMP/parity" --no-audit --no-fund playwright-core@1.55.0
+          # Bind before publishing readiness; scope the HTTP server to this test step.
+          python3 -m http.server 8010 --bind 127.0.0.1 --directory docs/max-motion > "$RUNNER_TEMP/parity-http.log" 2>&1 &
+          server=$!; trap 'kill "$server"' EXIT
+          curl --retry 5 --retry-connrefused --fail --silent http://127.0.0.1:8010/ -o /dev/null
+          CHROME_BIN="$(command -v google-chrome)" NODE_PATH="$RUNNER_TEMP/parity/node_modules" node max-motion/contract/tests/web-parity.cjs http://127.0.0.1:8010/
+  verify:
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: max-motion/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: stable
+      - run: python3 tool/preflight.py
+      - run: flutter pub get && flutter gen-l10n
+      - name: Analyze and run Flutter tests
+        run: |
+          set -o pipefail
+          (flutter analyze && flutter test) 2>&1 | tee "$RUNNER_TEMP/flutter-check.log" || { python3 tool/build_diagnostic.py "$RUNNER_TEMP/flutter-check.log"; exit 1; }
+      - name: Build single-source Android APK
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! flutter build apk --debug 2>&1 | tee "$RUNNER_TEMP/android-build.log"; then
+            # Publish the relevant Gradle/compiler diagnostic as a check annotation too.
+            python3 tool/build_diagnostic.py "$RUNNER_TEMP/android-build.log"
+            exit 1
+          fi
+      - run: cp build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/normal.apk"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: max-editor-single-debug
+          path: |
+            max-motion/mobile/build/app/outputs/flutter-apk/app-debug.apk
+            max-motion/mobile/pubspec.lock
+      - name: Install independent media decoder
+        run: if ! command -v ffmpeg >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y ffmpeg; fi
+      - name: Allow the hosted runner to use KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          working-directory: max-motion/mobile
+          script: |
+            flutter test --no-pub integration_test/language_android_test.dart -d emulator-5554
+            bash -o pipefail -c 'cd android && ./gradlew :contractCheck:connectedDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/contract-gradle.log" || { python3 ../tool/build_diagnostic.py "$RUNNER_TEMP/contract-gradle.log"; exit 1; }'
+            bash tool/single_qa/device.sh
+      - name: Keep source, output clips, screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: single-source-evidence
+          path: |
+            ${{ runner.temp }}/single-qa/fixtures/
+            ${{ runner.temp }}/single-qa/evidence/
+          if-no-files-found: warn
+      - name: Verify actual device testcase names
+        run: python3 ../contract/tests/check-device-results.py build/contractCheck/outputs/androidTest-results/connected/debug
+      - name: Retain contract test results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: project-contract-android-results
+          path: max-motion/mobile/build/contractCheck/outputs/androidTest-results/connected/debug/
+          if-no-files-found: warn
+
+      # Collect this branch's requested handoff without committing from a runner. The
+      # normal durable artifact above remains available even if publication is disabled.
+      - name: Package handoff evidence for repository report
+        if: ${{ always() && github.ref == 'refs/heads/arena/bff96530-first' && github.event_name == 'push' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -d "$RUNNER_TEMP/single-qa/evidence" ]; then
+            cd "$RUNNER_TEMP/single-qa"
+            zip -qr "$RUNNER_TEMP/handoff.zip" evidence fixtures
+            python3 -c 'import sys,json,base64;print(json.dumps({"encoding":"base64","content":base64.b64encode(open(sys.argv[1],"rb").read()).decode()}))' "$RUNNER_TEMP/handoff.zip" | gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" --input - --jq '.sha' > "$RUNNER_TEMP/handoff-sha"
+            echo "::notice title=Handoff evidence blob::$(cat "$RUNNER_TEMP/handoff-sha")"
+          fi
+      - name: Attach tested preview APK to this handoff
+        if: ${{ success() && github.ref == 'refs/heads/arena/bff96530-first' && contains(github.event.head_commit.message, '[single-handoff]') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp "$RUNNER_TEMP/normal.apk" "$RUNNER_TEMP/MAX-EDITOR-single-debug.apk"
+          gh release create "single-preview-$GITHUB_RUN_ID" "$RUNNER_TEMP/MAX-EDITOR-single-debug.apk" "$RUNNER_TEMP/handoff.zip" --prerelease --target "$GITHUB_SHA" --title 'MAX EDITOR — Single-source Android preview' --notes "Android debug APK and emulator evidence. Verification: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

@@ -1,0 +1,102 @@
+// node effects.cjs /absolute/path/to/index.html /absolute/fixture-dir
+// Requires playwright-core, @sparticuz/chromium and its platform shared libraries.
+const { chromium } = require("playwright-core"),
+  fs = require("fs"),
+  assert = require("node:assert/strict"),
+  path = require("path");
+(async () => {
+  const ch = (await import("@sparticuz/chromium")).default,
+    br = await chromium.launch({
+      args: ch.args,
+      executablePath: await ch.executablePath(),
+    });
+  try {
+    const p = await br.newPage({
+      viewport: { width: 393, height: 850 },
+      isMobile: true,
+      hasTouch: true,
+    });
+    const errors = [];
+    p.on("pageerror", (e) => errors.push(String(e)));
+    const url = new URL(
+      process.argv[2].includes("://")
+        ? process.argv[2]
+        : "file://" + process.argv[2],
+    );
+    url.searchParams.set("editor", "1");
+    await p.goto(url.href);
+    await p.waitForFunction(() => ready && !loading);
+    await p
+      .locator("#file")
+      .setInputFiles(path.join(process.argv[3], "fx-fixture.webm"));
+    await p.waitForFunction(
+      () => !loading && v.videoWidth === 240 && v.readyState >= 2,
+    );
+    await p.locator("#lane").click({ position: { x: 60, y: 40 } });
+    await p.waitForFunction(() => !v.seeking);
+    const ids = await p.evaluate(() => FX.tools.map((t) => t.id));
+    assert.equal(ids.length, 10);
+    async function pickTool(id) {
+      const section = await p.evaluate(
+        (id) => Object.keys(groups).find((k) => groups[k].includes(id)),
+        id,
+      );
+      const btn = p.locator(`[data-panel=${section}]`);
+      if ((await btn.getAttribute("aria-expanded")) !== "true")
+        await btn.click();
+      await p.locator(`[data-id=${id}]`).click();
+    }
+    async function exportOne(id) {
+      await p.locator("#render").click();
+      await p.locator("#confirmSettings").click();
+      await p.waitForFunction(() => exportFile && !run, null, {
+        timeout: 18000,
+      });
+      const bytes = await p.evaluate(async () =>
+        Array.from(new Uint8Array(await exportFile.arrayBuffer())),
+      );
+      fs.writeFileSync(
+        path.join(process.argv[3], id + ".mp4"),
+        Buffer.from(bytes),
+      );
+      await p.locator("#closeResult").click();
+    }
+    await exportOne("neutral");
+    for (const id of ids) {
+      await pickTool(id);
+      await p.locator("#fxToggle").click();
+      await p.waitForFunction(() => !fxCanvas.hidden, null, { timeout: 4000 });
+      await p.locator("#fxCompare").click();
+      await p.waitForFunction(() => compare && !fxCanvas.hidden);
+      await p.locator("#fxCompare").click();
+      await p.locator("#preview").click();
+      await p.waitForFunction(() => !run);
+      await exportOne(id);
+      await p.locator("#fxToggle").click();
+      console.log("Preview / compare / export / remove:", id);
+    }
+    await pickTool("light");
+    await p.locator("#fxToggle").click();
+    await p.locator("[data-param=exposure]").evaluate((e) => {
+      e.value = -20;
+      e.dispatchEvent(new Event("input"));
+      e.dispatchEvent(new Event("change"));
+    });
+    await p.locator("#undo").click();
+    assert.equal(await p.evaluate(() => currentFX().light.exposure), -8);
+    await p.evaluate(() => move(0.5));
+    await p.locator("[data-panel=cut]").click();
+    await p.locator("#split").click();
+    await pickTool("light");
+    await p.locator("#fxToggle").click();
+    assert(await p.evaluate(() => pieces[0][2].light && !pieces[1][2].light));
+    await exportOne("split");
+    assert.deepEqual(errors, []);
+    console.log("Undo, split inheritance and per-piece independence passed.");
+  } finally {
+    await br.close();
+  }
+})().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

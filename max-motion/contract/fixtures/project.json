@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "projectId": "parity",
+  "revision": 0,
+  "name": "عينة التوافق",
+  "canvas": {
+    "width": 800,
+    "height": 450,
+    "background": "#000000"
+  },
+  "fps": {
+    "num": 30000,
+    "den": 1001
+  },
+  "assets": [
+    {
+      "id": "a",
+      "kind": "video",
+      "durationUs": 10000000
+    },
+    {
+      "id": "pic",
+      "kind": "image",
+      "durationUs": 0
+    }
+  ],
+  "mainTrack": {
+    "id": "primary",
+    "clips": [
+      {
+        "id": "intro",
+        "assetId": "a",
+        "inUs": 0,
+        "outUs": 2000000,
+        "transform": {
+          "base": {
+            "x": 50,
+            "y": 50,
+            "w": 100,
+            "h": 100,
+            "angle": 0,
+            "opacity": 100,
+            "cropX": 0,
+            "cropY": 0
+          },
+          "keys": []
+        },
+        "effects": {}
+      },
+      {
+        "id": "cA",
+        "assetId": "a",
+        "inUs": 5000000,
+        "outUs": 9000000,
+        "transform": {
+          "base": {
+            "x": 50,
+            "y": 50,
+            "w": 100,
+            "h": 100,
+            "angle": 0,
+            "opacity": 100,
+            "cropX": 0,
+            "cropY": 0
+          },
+          "keys": [
+            {
+              "atUs": 5000000,
+              "value": {
+                "x": 10,
+                "y": 50,
+                "w": 100,
+                "h": 100,
+                "angle": 0,
+                "opacity": 100,
+                "cropX": 0,
+                "cropY": 0
+              }
+            },
+            {
+              "atUs": 9000000,
+              "value": {
+                "x": 90,
+                "y": 50,
+                "w": 100,
+                "h": 100,
+                "angle": 0,
+                "opacity": 100,
+                "cropX": 0,
+                "cropY": 0
+              }
+            }
+          ]
+        },
+        "effects": {
+          "light": {
+            "exposure": -8,
+            "gamma": 0,
+            "offset": 0
+          }
+        }
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "title",
+      "kind": "text",
+      "startUs": 2500000,
+      "durationUs": 2000000,
+      "text": "عنوان",
+      "font": "bold",
+      "color": "#ffffff",
+      "effect": "none",
+      "transform": {
+        "base": {
+          "x": 50,
+          "y": 50,
+          "w": 100,
+          "h": 100,
+          "angle": 0,
+          "opacity": 100,
+          "cropX": 0,
+          "cropY": 0
+        },
+        "keys": [
+          {
+            "atUs": 0,
+            "value": {
+              "x": 20,
+              "y": 50,
+              "w": 100,
+              "h": 100,
+              "angle": 0,
+              "opacity": 100,
+              "cropX": 0,
+              "cropY": 0
+            }
+          },
+          {
+            "atUs": 2000000,
+            "value": {
+              "x": 80,
+              "y": 50,
+              "w": 100,
+              "h": 100,
+              "angle": 0,
+              "opacity": 100,
+              "cropX": 0,
+              "cropY": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "overlay",
+      "kind": "overlay",
+      "assetId": "pic",
+      "startUs": 3000000,
+      "durationUs": 500000,
+      "transform": {
+        "base": {
+          "x": 50,
+          "y": 50,
+          "w": 100,
+          "h": 100,
+          "angle": 0,
+          "opacity": 100,
+          "cropX": 0,
+          "cropY": 0
+        },
+        "keys": []
+      }
+    }
+  ]
+}
