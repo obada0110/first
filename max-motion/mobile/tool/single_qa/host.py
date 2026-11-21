@@ -21,14 +21,25 @@ def find(label):
     raise AssertionError((label,[(n.get('text'),n.get('content-desc')) for n in ns]))
 def pick(file):
     try:
-        for i in range(14):
-            ns=nodes();opts=[n for n in ns if n.get('package','').endswith('documentsui')]; match=next((n for n in opts if file in n.get('text','')+' '+n.get('content-desc','')),None)
-            if match is not None:tap(match);return
+        selected=False
+        for i in range(20):
+            ns=nodes();opts=[n for n in ns if n.get('package','').endswith('documentsui')]
+            if selected and not opts:
+                if any('gallery' in n.get('package','') for n in ns):
+                    adb('shell','input','keyevent','4');selected=False;continue
+                return
             if opts:
+                print('picker:',[(n.get('resource-id'),n.get('text'),n.get('content-desc')) for n in opts if n.get('text') or n.get('content-desc')],flush=True)
+                confirm=next((n for n in opts if n.get('text','').lower() in ('open','select') and n.get('enabled')=='true'),None)
+                # The thumbnail accessibility label launches the Gallery preview; the
+                # filename (android:id/title) actually returns a SAF URI to the app.
+                match=next((n for n in opts if n.get('text','')==file),None)
+                if selected and confirm is not None:tap(confirm);time.sleep(.5);continue
+                if match is not None:tap(match);selected=True;time.sleep(.6);continue
                 down=next((n for n in opts if n.get('text')=='Downloads'),None); drawer=next((n for n in opts if 'roots' in n.get('content-desc','').lower() or 'Show navigation' in n.get('content-desc','')),None)
                 if down is not None:tap(down)
                 elif drawer is not None:tap(drawer)
-            time.sleep(.4)
+            time.sleep(.3)
         raise RuntimeError([(n.get('text'),n.get('content-desc')) for n in ns])
     except Exception:traceback.print_exc();shot('picker-failure')
 def frames(p,t):return cmd('ffmpeg','-v','error','-ss',str(t),'-i',p,'-frames:v','1','-vf','scale=48:48','-f','rawvideo','-pix_fmt','rgb24','-threads','1','pipe:1')
