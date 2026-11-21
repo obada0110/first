@@ -66,8 +66,9 @@ class _SingleState extends State<SingleScreen> {
       end.text = ms(next['to'] ?? 0);
     }
     setState(() {
-      if (!restoring && data['duration'] == null && next['duration'] != null)
+      if (!restoring && data['duration'] == null && next['duration'] != null) {
         library = false;
+      }
       data = next;
     });
   }
@@ -119,11 +120,12 @@ class _SingleState extends State<SingleScreen> {
     } on MissingPluginException {
       /* Widget tests have no Android channel. */
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           busy = false;
           if (method == 'restore') restoring = false;
         });
+      }
     }
   }
 
@@ -540,7 +542,7 @@ class _SingleState extends State<SingleScreen> {
             ],
           );
         }
-        if (wide)
+        if (wide) {
           return Row(
             key: const ValueKey('panes'),
             children: [
@@ -577,6 +579,7 @@ class _SingleState extends State<SingleScreen> {
               ),
             ],
           );
+        }
         // Keep the monitor mounted while switching tools; shrink it for keyboard/large type.
         return Column(
           children: [
@@ -590,7 +593,7 @@ class _SingleState extends State<SingleScreen> {
               child: LayoutBuilder(
                 builder: (_, inner) {
                   if (inner.maxHeight < 320 ||
-                      MediaQuery.textScalerOf(ctx).scale(1) > 1.5)
+                      MediaQuery.textScalerOf(ctx).scale(1) > 1.5) {
                     return ListView(
                       children: [
                         rail(),
@@ -601,6 +604,7 @@ class _SingleState extends State<SingleScreen> {
                         ),
                       ],
                     );
+                  }
                   return Column(
                     children: [
                       rail(),
