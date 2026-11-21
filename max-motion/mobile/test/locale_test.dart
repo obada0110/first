@@ -31,7 +31,6 @@ void main() {
     await tester.pumpWidget(MaxEditorApp(controller: controller));
     await tester.tap(find.byKey(const ValueKey('settings')));
     await tester.pumpAndSettle();
-    await tester.pumpAndSettle();
     TextDirection direction(String title) => Directionality.of(tester.element(find.text(title)));
     expect(direction('الإعدادات'), TextDirection.rtl);
     await tester.tap(find.byKey(const ValueKey('en')));
@@ -50,7 +49,6 @@ void main() {
     final prefs = MemoryPreferences()..fail = true;
     await tester.pumpWidget(MaxEditorApp(controller: LocaleController(prefs)));
     await tester.tap(find.byKey(const ValueKey('settings')));
-    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('en')));
     await tester.pumpAndSettle();

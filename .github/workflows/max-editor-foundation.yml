@@ -120,3 +120,10 @@ jobs:
             python3 -c 'import sys,json,base64;print(json.dumps({"encoding":"base64","content":base64.b64encode(open(sys.argv[1],"rb").read()).decode()}))' "$RUNNER_TEMP/handoff.zip" | gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" --input - --jq '.sha' > "$RUNNER_TEMP/handoff-sha"
             echo "::notice title=Handoff evidence blob::$(cat "$RUNNER_TEMP/handoff-sha")"
           fi
+      - name: Attach tested preview APK to this handoff
+        if: ${{ success() && github.ref == 'refs/heads/arena/bff96530-first' && contains(github.event.head_commit.message, '[single-handoff]') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp "$RUNNER_TEMP/normal.apk" "$RUNNER_TEMP/MAX-EDITOR-single-debug.apk"
+          gh release create "single-preview-$GITHUB_RUN_ID" "$RUNNER_TEMP/MAX-EDITOR-single-debug.apk" "$RUNNER_TEMP/handoff.zip" --prerelease --target "$GITHUB_SHA" --title 'MAX EDITOR — Single-source Android preview' --notes "Android debug APK and emulator evidence. Verification: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

@@ -53,7 +53,7 @@ class SingleChannel(private val a:Activity,e:FlutterEngine) {
             project=if(selected==null)store.restore() else null
             val src=selected?:project?.let(store::uri);val metadata=src?.let{Source.inspect(context,it)}
             if(selected!=null){acquired=!context.contentResolver.persistedUriPermissions.any{it.uri==selected && it.isReadPermission};context.contentResolver.takePersistableUriPermission(selected,Intent.FLAG_GRANT_READ_URI_PERMISSION);project=store.create(selected,requireNotNull(metadata));acquired=false}
-            a.runOnUiThread{working=false;if(!closed){p=project;uri=src;info=metadata;issue="";if(src!=null){player.setMediaItem(MediaItem.fromUri(src));player.prepare();player.seekTo(Clock.clips(requireNotNull(project)).single().n("inUs")/1000)};r.success(state())}}
+            a.runOnUiThread{working=false;if(!closed){exporter.clearResult();p=project;uri=src;info=metadata;issue="";if(src!=null){player.setMediaItem(MediaItem.fromUri(src));player.prepare();player.seekTo(Clock.clips(requireNotNull(project)).single().n("inUs")/1000)};r.success(state())}}
         }catch(ex:Exception){if(acquired && selected!=null)runCatching{context.contentResolver.releasePersistableUriPermission(selected,1)};a.runOnUiThread{working=false;if(!closed){if(selected==null){p=project;info=null;issue=if(project!=null)"missing" else "save"};r.error(if(selected!=null)"invalid" else issue,null,null)}}}
     }}
     private fun startExport(tree:Uri?){val clip=Clock.clips(requireNotNull(p)).single();exporter.start(requireNotNull(uri),clip.n("inUs"),clip.n("outUs"),requireNotNull(info),tree)}

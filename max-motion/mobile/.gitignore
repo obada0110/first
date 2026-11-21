@@ -15,3 +15,5 @@ android/key.properties
 .env*
 .idea/
 *.iml
+
+__pycache__/

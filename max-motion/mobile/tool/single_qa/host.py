@@ -35,6 +35,12 @@ def pick(file):
                 # filename (android:id/title) actually returns a SAF URI to the app.
                 match=next((n for n in opts if n.get('text','')==file),None)
                 if selected and confirm is not None:tap(confirm);time.sleep(.5);continue
+                if match is None:
+                    # Some grid layouts merge the filename into the card's accessibility
+                    # description. Tap its caption strip, not the large preview thumbnail.
+                    card=next((n for n in opts if file in n.get('content-desc','') and n.get('clickable')=='true'),None)
+                    if card is not None:
+                        x,y,x2,y2=map(int,re.findall(r'\d+',card.get('bounds')));adb('shell','input','tap',(x+x2)//2,y2-8);selected=True;time.sleep(.6);continue
                 if match is not None:tap(match);selected=True;time.sleep(.6);continue
                 down=next((n for n in opts if n.get('text')=='Downloads'),None); drawer=next((n for n in opts if 'roots' in n.get('content-desc','').lower() or 'Show navigation' in n.get('content-desc','')),None)
                 if down is not None:tap(down)

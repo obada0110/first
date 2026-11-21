@@ -26,7 +26,8 @@ class Export(private val c:Context) {
     fun start(uri:Uri,from:Long,to:Long,info:Source,tree:Uri?) {
         check(!busy);destination="";stopped=AtomicBoolean();val flag=stopped
         if(c.cacheDir.usableSpace<1024*1024){state="space";return}
-        val tmp=File.createTempFile("mx-clip-",".mp4",c.cacheDir);scratch=tmp;state="exporting"
+        val tmp=try {File.createTempFile("mx-clip-",".mp4",c.cacheDir)} catch(e:IOException){state=failure(e);return}
+        scratch=tmp;state="exporting"
         try {
             val clip=MediaItem.ClippingConfiguration.Builder().setStartPositionUs(from).setEndPositionUs(to).build()
             val tr=Transformer.Builder(c).setVideoMimeType(MimeTypes.VIDEO_H264).setAudioMimeType(MimeTypes.AUDIO_AAC).addListener(object:Transformer.Listener{
@@ -38,6 +39,9 @@ class Export(private val c:Context) {
                         try {
                             val fileUri=Uri.fromFile(tmp);val result=Source.inspect(c,fileUri)
                             check(result.audio==info.audio && kotlin.math.abs(result.duration-(to-from))<maxOf(150000L,2_000_000L/(info.rate?:24)))
+                            // The codec may bake the rotation into pixels or retain a rotation tag.
+                            val aspect=result.displayWidth.toDouble()/result.displayHeight
+                            check(kotlin.math.abs(aspect/(info.displayWidth.toDouble()/info.displayHeight)-1.0)<0.03)
                             val retriever=MediaMetadataRetriever();try{retriever.setDataSource(tmp.path);checkNotNull(retriever.getFrameAtTime(0,MediaMetadataRetriever.OPTION_CLOSEST_SYNC)).recycle()}finally{retriever.release()}
                             check(!flag.get());val name="MAX-${UUID.randomUUID()}.mp4"
                             val resolver=c.contentResolver
@@ -56,5 +60,6 @@ class Export(private val c:Context) {
     }
     private fun failure(e:Throwable):String {android.util.Log.w("MaxExport","Export failed",e);return if(generateSequence(e){it.cause}.any{it.message?.contains("ENOSPC")==true || it.message?.contains("No space left",true)==true} || c.cacheDir.usableSpace<1024*1024)"space" else "exportError"}
     fun cancel(){if(!busy)return;synchronized(stopped){stopped.set(true)};if(!copying){transformer?.cancel();transformer=null;scratch?.delete();state="cancelled"}}
+    fun clearResult(){if(!busy){state="idle";destination=""}}
     fun close(){cancel();worker.shutdown()}
 }
