@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show PlatformViewHitTestBehavior;
 import 'package:flutter/services.dart';
 import '../../app/locale_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -58,9 +57,7 @@ class _SingleState extends State<SingleScreen> {
       if(d==null)Padding(padding:const EdgeInsets.only(top:24),child:Text(t.emptyHint)),
       if(data['name']!=null)Text(data['name'] as String),
       if(d!=null)...[
-        SizedBox(height:170,child:ColoredBox(color:Colors.black,child:PlatformViewLink(viewType:'max_editor/preview',
-          surfaceFactory:(context,controller)=>AndroidViewSurface(controller:controller as AndroidViewController,gestureRecognizers:const {},hitTestBehavior:PlatformViewHitTestBehavior.transparent),
-          onCreatePlatformView:(params)=>PlatformViewsService.initExpensiveAndroidView(id:params.id,viewType:params.viewType,layoutDirection:Directionality.of(context))..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)..create()))),
+        SizedBox(height:170,child:ColoredBox(color:Colors.black,child:AndroidView(viewType:'max_editor/preview',layoutDirection:Directionality.of(context)))),
         Text(t.sourceDetails(data['w'],data['h'],data['rot'],data['fps']==null?t.unknownRate:t.sourceRate(data['fps']),data['audio']==true?t.withAudio:t.silent)),
         Text(t.positionTime(t.position,(pos/1e6).toStringAsFixed(2),(d/1e6).toStringAsFixed(2))),
         Slider(value:(drag??pos.toDouble()).clamp(0,d.toDouble()),max:d.toDouble(),onChanged:lock?null:(v)=>setState(()=>drag=v),onChangeEnd:(v){setState(()=>drag=null);run('seek',{'us':v.round()});}),

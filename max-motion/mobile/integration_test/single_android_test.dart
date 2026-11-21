@@ -16,7 +16,9 @@ void main(){
     final outputs=<String,String>{};
     for(final file in ['mx-land.mp4','mx-tall.mp4']){
       await open(file);final s=await state();expect(s['name'],file);expect(s['duration'],closeTo(6000000,45000));expect(s['w'],file=='mx-land.mp4'?320:180);expect(s['audio'],file=='mx-land.mp4');
-      await api.invokeMethod('play');await until((s)=>s['position']>400000 && s['playing']==true);await api.invokeMethod('play');await api.invokeMethod('seek',{'us':1500000});await tester.pump(const Duration(milliseconds:500));await host('shot/${file=='mx-land.mp4'?'land':'tall'}-preview');
+      // Give Flutter time to mount the native surface after the picker returns.
+      await tester.pump(const Duration(milliseconds:450));await tester.pump(const Duration(milliseconds:450));
+      await api.invokeMethod('seek',{'us':1000000});await api.invokeMethod('play');await until((s)=>s['position']>2000000 && s['playing']==true);await host('shot/${file=='mx-land.mp4'?'land':'tall'}-preview');await api.invokeMethod('close');
       await expectLater(api.invokeMethod('range',{'from':0,'to':20000,'revision':0}),throwsA(isA<PlatformException>()));
       await api.invokeMethod('range',{'from':1000000,'to':3500000,'revision':0});
       await api.invokeMethod('export');await api.invokeMethod('cancel');expect((await state())['export'],'cancelled');
