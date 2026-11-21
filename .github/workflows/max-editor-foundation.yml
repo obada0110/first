@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'max-motion/mobile/**'
+      - 'max-motion/contract/**'
       - '.github/workflows/max-editor-foundation.yml'
   workflow_dispatch:
 permissions:
@@ -52,4 +53,13 @@ jobs:
           api-level: 35
           arch: x86_64
           working-directory: max-motion/mobile
-          script: flutter test --no-pub integration_test/language_android_test.dart -d emulator-5554
+          script: |
+            flutter test --no-pub integration_test/language_android_test.dart -d emulator-5554
+            cd android && ./gradlew :app:connectedDebugAndroidTest
+      - name: Retain contract test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-contract-android-results
+          path: max-motion/mobile/build/app/outputs/androidTest-results/connected/debug/
+          if-no-files-found: warn
