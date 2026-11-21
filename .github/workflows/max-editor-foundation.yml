@@ -3,12 +3,35 @@ on:
   push:
     paths:
       - 'max-motion/mobile/**'
-      - 'max-motion/contract/**'
+      - 'max-motion/contract/kotlin/**'
+      - 'max-motion/contract/android/**'
+      - 'max-motion/contract/schema/**'
+      - 'max-motion/contract/fixtures/**'
+      - 'max-motion/contract/tests/**'
       - '.github/workflows/max-editor-foundation.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
+  contract-data:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate interchange schema and fixture
+        run: |
+          python3 -m venv "$RUNNER_TEMP/schema-env"
+          "$RUNNER_TEMP/schema-env/bin/pip" install 'jsonschema>=4,<5'
+          "$RUNNER_TEMP/schema-env/bin/python" max-motion/contract/tests/schema_test.py
+      - name: Compare real browser edit path with contract vectors
+        run: |
+          if ! command -v ffmpeg >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y ffmpeg; fi
+          npm install --prefix "$RUNNER_TEMP/parity" --no-audit --no-fund playwright-core@1.55.0
+          # Bind before publishing readiness; scope the HTTP server to this test step.
+          python3 -m http.server 8010 --bind 127.0.0.1 --directory docs/max-motion > "$RUNNER_TEMP/parity-http.log" 2>&1 &
+          server=$!; trap 'kill "$server"' EXIT
+          curl --retry 5 --retry-connrefused --fail --silent http://127.0.0.1:8010/ -o /dev/null
+          CHROME_BIN="$(command -v google-chrome)" NODE_PATH="$RUNNER_TEMP/parity/node_modules" node max-motion/contract/tests/web-parity.cjs http://127.0.0.1:8010/
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -55,7 +78,9 @@ jobs:
           working-directory: max-motion/mobile
           script: |
             flutter test --no-pub integration_test/language_android_test.dart -d emulator-5554
-            cd android && ./gradlew :app:connectedDebugAndroidTest
+            bash -o pipefail -c 'cd android && ./gradlew :app:connectedDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/contract-gradle.log" || { python3 ../tool/build_diagnostic.py "$RUNNER_TEMP/contract-gradle.log"; exit 1; }'
+      - name: Verify actual device testcase names
+        run: python3 ../contract/tests/check-device-results.py build/app/outputs/androidTest-results/connected/debug
       - name: Retain contract test results
         if: always()
         uses: actions/upload-artifact@v4

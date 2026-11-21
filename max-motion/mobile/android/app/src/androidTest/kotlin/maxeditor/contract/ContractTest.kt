@@ -75,6 +75,25 @@ class ContractTest {
         broken=true;try{s.cut(2,Cut.DELETE,"intro");fail()}catch(_:IOException){};broken=false;s.redo(2);samePayload(codec.parse(before),codec.parse(s.snapshot))
     }
 
+    @Test fun rollbackInterruptedFileAndCheckFrameEdges() {
+        val path=File(device.targetContext.filesDir,"contract-interrupt-${System.nanoTime()}.json")
+        val disk=AtomicCheckpoint(path)
+        try {
+            disk.write(input)
+            val atomic=android.util.AtomicFile(path)
+            val stream=atomic.startWrite(); stream.write("{partial".toByteArray()); atomic.failWrite(stream)
+            assertEquals(original,codec.parse(disk.read()))
+        } finally {android.util.AtomicFile(path).delete()}
+        assertEquals(0 to 1999999L,Clock.locate(original,1999999L))
+        val track=original.getValue("mainTrack").jsonObject
+        val clip=Clock.clips(original).first()
+        fun durationCase(us:Long):Long {
+            val one=track.with("clips",JsonArray(listOf(clip.with("outUs",JsonPrimitive(us)))))
+            return Clock.frameCount(codec.parse(original.with("mainTrack",one).toString()))
+        }
+        assertEquals(1L,durationCase(1));assertEquals(30L,durationCase(1001000));assertEquals(31L,durationCase(1001001))
+    }
+
     @Test fun rejectMalformedProjects() {
         val track=original.getValue("mainTrack").jsonObject;val c=Clock.clips(original)[1]
         fun change(c2:JsonObject)=original.with("mainTrack",track.with("clips",JsonArray(listOf(Clock.clips(original)[0],c2))))
