@@ -1,0 +1,47 @@
+name: MAX EDITOR Android foundation
+on:
+  push:
+    paths:
+      - 'max-motion/mobile/**'
+      - '.github/workflows/max-editor-foundation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: max-motion/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: stable
+      - run: python3 tool/preflight.py
+      - run: flutter pub get && flutter gen-l10n
+      - run: flutter analyze && flutter test
+      - run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: max-editor-foundation-debug
+          path: |
+            max-motion/mobile/build/app/outputs/flutter-apk/app-debug.apk
+            max-motion/mobile/pubspec.lock
+      - name: Allow the hosted runner to use KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          working-directory: max-motion/mobile
+          script: flutter test --no-pub integration_test/language_android_test.dart -d emulator-5554
