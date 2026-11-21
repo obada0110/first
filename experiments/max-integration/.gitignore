@@ -1,0 +1,7 @@
+.gradle/
+.kotlin/
+build/
+proof/
+node_modules/
+web/schema.json
+web/core.mjs
