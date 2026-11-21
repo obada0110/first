@@ -41,7 +41,7 @@ def pick(file):
                     card=next((n for n in opts if file in n.get('content-desc','') and n.get('clickable')=='true'),None)
                     if card is not None:
                         x,y,x2,y2=map(int,re.findall(r'\d+',card.get('bounds')));adb('shell','input','tap',(x+x2)//2,y2-8);selected=True;time.sleep(.6);continue
-                if match is not None:tap(match);selected=True;time.sleep(.6);continue
+                if match is not None:tap(match);return
                 down=next((n for n in opts if n.get('text')=='Downloads'),None); drawer=next((n for n in opts if 'roots' in n.get('content-desc','').lower() or 'Show navigation' in n.get('content-desc','')),None)
                 if down is not None:tap(down)
                 elif drawer is not None:tap(drawer)
@@ -63,12 +63,12 @@ def verify(file):
     cmd('ffmpeg','-v','error','-xerror','-i',target,'-f','null','-');tone=None
     if sound:
         pcm=array.array('h',cmd('ffmpeg','-v','error','-ss','.2'.replace('.','0.'),'-t','1','-i',target,'-vn','-ac','1','-ar','16000','-f','s16le','-'));tone=sum(x<0<=y for x,y in zip(pcm,pcm[1:]));assert 650<tone<670 and max(pcm)>500,tone
-    digest=lambda b:hashlib.sha256(b).hexdigest();sourcehash=digest(src.read_bytes());assert sourcehash==digest(adb('exec-out','cat','/sdcard/Download/'+file))
-    result=dict(source=file,duration=dur,display=display,audio=sound,toneHz=tone,frameMeanErrors=diffs,sourceSHA256=sourcehash,outputSHA256=digest(target.read_bytes()));(out/(file+'.json')).write_text(json.dumps(result,indent=2));print(result,flush=True)
+    digest=lambda b:hashlib.sha256(b).hexdigest();sourcehash=digest(src.read_bytes());before=json.loads((out/'before.json').read_text())[file];after=digest(adb('exec-out','cat','/sdcard/Download/'+file));assert before==after==sourcehash
+    result=dict(beforeDeviceSHA256=before,afterDeviceSHA256=after,source=file,duration=dur,display=display,audio=sound,toneHz=tone,frameMeanErrors=diffs,sourceSHA256=sourcehash,outputSHA256=digest(target.read_bytes()));(out/(file+'.json')).write_text(json.dumps(result,indent=2));print(result,flush=True)
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            op,_,name=self.path.strip('/').partition('/');assert name in ('mx-land.mp4','mx-tall.mp4','mx-bad.mp4','land-preview','tall-preview','export-complete')
+            op,_,name=self.path.strip('/').partition('/');assert (op=='pick' and re.fullmatch(r'MAX-[0-9a-f-]{36}\.mp4',name)) or name in ('land-output','tall-output','mx-land.mp4','mx-tall.mp4','mx-bad.mp4','land-preview','tall-preview','export-complete')
             if op=='pick':threading.Thread(target=pick,args=(name,),daemon=True).start()
             elif op=='shot':shot(name)
             elif op=='verify':verify(name)
