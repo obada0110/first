@@ -34,5 +34,9 @@
   "startMs": "البداية (مللي ثانية)",
   "endMs": "النهاية (مللي ثانية)",
   "applyRange": "حفظ النطاق",
-  "replaceHint": "اختيار فيديو آخر يستبدل المشروع المحلي الحالي."
+  "replaceHint": "اختيار فيديو آخر يستبدل المشروع المحلي الحالي.",
+  "sourceDetails": "{w} × {h} · {rotation}° · {rate} · {audio}",
+  "positionTime": "{label}: {pos} / {total} s",
+  "selectedTime": "{label}: {seconds} s",
+  "sourceRate": "{rate} fps"
 }

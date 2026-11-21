@@ -37,5 +37,9 @@
   "startMs": "Start (ms)",
   "endMs": "End (ms)",
   "applyRange": "Save range",
-  "replaceHint": "Choosing another video replaces the current local project."
+  "replaceHint": "Choosing another video replaces the current local project.",
+  "sourceDetails": "{w} × {h} · {rotation}° · {rate} · {audio}",
+  "positionTime": "{label}: {pos} / {total} s",
+  "selectedTime": "{label}: {seconds} s",
+  "sourceRate": "{rate} fps"
 }
