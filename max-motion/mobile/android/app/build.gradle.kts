@@ -20,7 +20,6 @@ android {
     }
 
     defaultConfig {
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         applicationId = "io.github.obada0110.maxeditor"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -29,17 +28,8 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
-    sourceSets.getByName("androidTest") {
-        java.srcDirs("../../../contract/kotlin", "../../../contract/android")
-        assets.srcDirs("../../../contract/schema", "../../../contract/fixtures")
-    }
-}
 
-dependencies {
-    // Match Flutter 3.38 integration_test debugRuntimeClasspath constraints.
-    androidTestImplementation("androidx.test:runner:1.2.0")
-    androidTestImplementation("androidx.test.ext:junit:1.1.1")
-    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+
 }
 
 flutter {

@@ -78,13 +78,13 @@ jobs:
           working-directory: max-motion/mobile
           script: |
             flutter test --no-pub integration_test/language_android_test.dart -d emulator-5554
-            bash -o pipefail -c 'cd android && ./gradlew :app:connectedDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/contract-gradle.log" || { python3 ../tool/build_diagnostic.py "$RUNNER_TEMP/contract-gradle.log"; exit 1; }'
+            bash -o pipefail -c 'cd android && ./gradlew :contractCheck:connectedDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/contract-gradle.log" || { python3 ../tool/build_diagnostic.py "$RUNNER_TEMP/contract-gradle.log"; exit 1; }'
       - name: Verify actual device testcase names
-        run: python3 ../contract/tests/check-device-results.py build/app/outputs/androidTest-results/connected/debug
+        run: python3 ../contract/tests/check-device-results.py build/contractCheck/outputs/androidTest-results/connected/debug
       - name: Retain contract test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: project-contract-android-results
-          path: max-motion/mobile/build/app/outputs/androidTest-results/connected/debug/
+          path: max-motion/mobile/build/contractCheck/outputs/androidTest-results/connected/debug/
           if-no-files-found: warn
