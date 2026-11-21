@@ -1,0 +1,5 @@
+.gradle/
+.kotlin/
+build/
+proof/
+node_modules/

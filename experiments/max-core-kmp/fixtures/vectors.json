@@ -1,0 +1,108 @@
+{
+  "split": {
+    "id": "cA",
+    "timeUs": 3000000,
+    "rightId": "cB"
+  },
+  "rangesBefore": [
+    [
+      0,
+      2000000
+    ],
+    [
+      5000000,
+      9000000
+    ]
+  ],
+  "rangesAfter": [
+    [
+      0,
+      2000000
+    ],
+    [
+      5000000,
+      6000000
+    ],
+    [
+      6000000,
+      9000000
+    ]
+  ],
+  "samples": [
+    {
+      "timeUs": 0,
+      "index": 0,
+      "sourceUs": 0,
+      "x": 50,
+      "layers": [],
+      "titleX": null
+    },
+    {
+      "timeUs": 2000000,
+      "index": 1,
+      "sourceUs": 5000000,
+      "x": 10,
+      "layers": [],
+      "titleX": null
+    },
+    {
+      "timeUs": 2500000,
+      "index": 1,
+      "sourceUs": 5500000,
+      "x": 20,
+      "layers": [
+        "title"
+      ],
+      "titleX": 20
+    },
+    {
+      "timeUs": 3000000,
+      "index": 1,
+      "sourceUs": 6000000,
+      "x": 30,
+      "layers": [
+        "title",
+        "overlay"
+      ],
+      "titleX": 35
+    },
+    {
+      "timeUs": 3500000,
+      "index": 1,
+      "sourceUs": 6500000,
+      "x": 40,
+      "layers": [
+        "title"
+      ],
+      "titleX": 50
+    },
+    {
+      "timeUs": 4500000,
+      "index": 1,
+      "sourceUs": 7500000,
+      "x": 60,
+      "layers": [],
+      "titleX": null
+    }
+  ],
+  "frameSamples": [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      33366
+    ],
+    [
+      30,
+      1001000
+    ],
+    [
+      30000,
+      1001000000
+    ]
+  ],
+  "durationUs": 6000000,
+  "frames": 180
+}

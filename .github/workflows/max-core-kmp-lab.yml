@@ -1,0 +1,53 @@
+name: Isolated MAX CORE KMP proof
+on:
+  push:
+    branches: ['arena/bff96530-first']
+    paths: ['experiments/max-core-kmp/**', '.github/workflows/max-core-kmp-lab.yml']
+permissions:
+  contents: read
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: experiments/max-core-kmp
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify frozen production tree and fixtures
+        run: |
+          git diff --exit-code 7c13420462ce2ca35861a2ceb08652d4d7588474 HEAD -- ../../max-motion ../../docs ../../design
+          cmp fixtures/project-v1.json ../../max-motion/contract/schema/project-v1.json
+          for x in project vectors; do cmp fixtures/$x.json ../../max-motion/contract/fixtures/$x.json; done
+      - name: Build the two targets
+        run: |
+          mkdir -p proof/records
+          set -o pipefail
+          ./gradlew --no-daemon --console=plain jvmJar runtimeDeps compileProductionExecutableKotlinJs 2>&1 | tee proof/records/build.log || { echo "::error title=Gradle::$(tail -55 proof/records/build.log | tr '\n' ' ' | cut -c1-6000)"; exit 1; }
+      - name: Execute isolated parity and benchmark suite
+        run: |
+          bash tools/run-proof.sh 2>&1 | tee proof/records/suite.log
+      - name: Retain evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: kmp-proof
+          path: experiments/max-core-kmp/proof
+      - name: Export evidence for the report
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p proof/records; cd proof
+          zip -qr "$RUNNER_TEMP/proof.zip" .
+          sha=$(python3 -c 'import sys,json,base64;print(json.dumps({"encoding":"base64","content":base64.b64encode(open(sys.argv[1],"rb").read()).decode()}))' "$RUNNER_TEMP/proof.zip" | gh api -X POST "repos/$GITHUB_REPOSITORY/git/blobs" --input - --jq '.sha')
+          echo "::notice title=Experiment evidence::$sha"
