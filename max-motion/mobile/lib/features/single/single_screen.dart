@@ -115,7 +115,7 @@ class _SingleState extends State<SingleScreen> {
       if (mounted && method == 'range') {
         setState(() { committed = true; resetDraft(); });
       }
-      if (method == 'restore' || method == 'open' || method == 'range' || method == 'relink') await refreshProjectCore();
+      if (method == 'restore' || method == 'open' || method == 'range' || method == 'relink') unawaited(refreshProjectCore());
     } on PlatformException catch (e) {
       try {
         apply(await api.invokeMapMethod('state'));
