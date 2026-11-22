@@ -5,8 +5,12 @@ from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 qa=Path(os.environ['QA']);out=qa/'evidence';out.mkdir(parents=True,exist_ok=True);app='io.github.obada0110.maxeditor.phase3a';sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'single_qa'));import host as legacy
 adb=legacy.adb;metrics=[]
 def pick(name):
+    ns=[];last_error=None
     for _ in range(24):
-        ns=legacy.nodes();docs=[n for n in ns if n.get('package','').endswith('documentsui')]
+        try: ns=legacy.nodes()
+        except sp.CalledProcessError as ex:
+            last_error=str(ex);time.sleep(.25);continue
+        docs=[n for n in ns if n.get('package','').endswith('documentsui')]
         match=next((n for n in docs if n.get('text')==name),None)
         if match is not None:legacy.tap(match);return
         roots=next((n for n in docs if n.get('content-desc')=='Show roots'),None)
@@ -14,7 +18,7 @@ def pick(name):
         downloads=next((n for n in docs if n.get('text')=='Downloads'),None)
         if downloads is not None:legacy.tap(downloads);time.sleep(.3);continue
         time.sleep(.25)
-    raise AssertionError(('DocumentsUI file not found',name,[(n.get('text'),n.get('content-desc')) for n in ns]))
+    raise AssertionError(('DocumentsUI file not found',name,'lastUiDumpError',last_error,[(n.get('text'),n.get('content-desc')) for n in ns]))
 class Handler(BaseHTTPRequestHandler):
  def do_GET(self):
   try:
