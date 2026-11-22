@@ -161,6 +161,7 @@ class _SingleState extends State<SingleScreen> {
 
   Future<void> coreEdit(String op,[Map<String,dynamic>? fields]) async {
     if(!coreEnabled || coreBusy || projectCore==null || busy) return;
+    final appliedLabel=AppLocalizations.of(context).coreApplied;
     setState(()=>coreBusy=true);
     final clips=coreClips;
     if(clips.isEmpty){setState(()=>coreBusy=false);return;}
@@ -180,7 +181,7 @@ class _SingleState extends State<SingleScreen> {
       projectCore=raw==null?null:jsonDecode(raw) as Map<String,dynamic>;
       if(op=='split')selectedCoreClip=index+1;
       if(op=='addClip')selectedCoreClip=coreClips.length-1;
-      coreStatus='${AppLocalizations.of(context).coreApplied} · ${projectCore?['revision']}';
+      coreStatus='$appliedLabel · ${projectCore?['revision']}';
       await refresh();
     } on PlatformException catch(e) {
       coreStatus='${e.code}${e.message==null?'':': ${e.message}'}';
