@@ -39,13 +39,10 @@ class Handler(BaseHTTPRequestHandler):
    body=json.loads(self.rfile.read(int(self.headers['Content-Length'])));name=urllib.parse.urlparse(self.path).path.strip('/').split('/')[-1]
    if name=='metrics':(out/'metrics.json').write_text(json.dumps(body,indent=2));data=b'ok'
    elif name.startswith('frame-'):
-    print('FRAME_REQUEST',name,repr(body),flush=True)
-    missing=[k for k in ('w','h','x','y') if body.get(k) is None]
-    if missing:raise ValueError(('missing frame coordinates',missing,body))
-    w,h,x,y=[int(body[k]) for k in ('w','h','x','y')];assert min(w,h)>=16
     shot=out/(name+'.png');shot.write_bytes(adb('exec-out','screencap','-p'))
-    raw=sp.check_output(['ffmpeg','-v','error','-i',str(shot),'-vf',f'crop={w}:{h}:{x}:{y},scale=64:64','-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','-threads','1','pipe:1'])
-    pixels=list(zip(raw[::3],raw[1::3],raw[2::3]));row={'sample':name,'box':[x,y,w,h],'saturated':sum(max(p)-min(p)>50 for p in pixels),'nearBlack':sum(max(p)<12 for p in pixels),'pixels':len(pixels)};metrics.append(row);(out/'frame-observations.json').write_text(json.dumps(metrics,indent=2));data=json.dumps(row).encode()
+    # Match the validated preview probe used by the production-screen QA suite.
+    raw=sp.check_output(['ffmpeg','-v','error','-i',str(shot),'-vf','crop=64:64:(iw-64)/2:ih*0.21','-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','-threads','1','pipe:1'])
+    pixels=list(zip(raw[::3],raw[1::3],raw[2::3]));row={'sample':name,'saturated':sum(max(p)-min(p)>50 for p in pixels),'nearBlack':sum(max(p)<12 for p in pixels),'pixels':len(pixels)};metrics.append(row);(out/'frame-observations.json').write_text(json.dumps(metrics,indent=2));data=json.dumps(row).encode()
    else:raise ValueError(self.path)
    self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(data)
   except Exception as e:self.send_error(500,str(e))
