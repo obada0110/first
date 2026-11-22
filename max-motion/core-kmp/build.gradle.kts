@@ -1,4 +1,4 @@
-plugins { kotlin("multiplatform") version "2.2.20" }
+plugins { kotlin("multiplatform") }
 
 kotlin {
     jvm { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8) } }
