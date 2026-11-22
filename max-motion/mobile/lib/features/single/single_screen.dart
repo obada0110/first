@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/locale_controller.dart';
@@ -23,6 +25,11 @@ class SingleScreen extends StatefulWidget {
 
 class _SingleState extends State<SingleScreen> {
   static const api = MethodChannel('max_editor/single/v1');
+  static const projectApi = MethodChannel('max_editor/project_core/v1');
+  bool coreEnabled = false, coreBusy = false;
+  Map<String, dynamic>? projectCore;
+  int selectedCoreClip = 0;
+  String coreStatus = '';
   Map<dynamic, dynamic> data = {};
   final start = TextEditingController(), end = TextEditingController();
   Timer? timer;
@@ -97,7 +104,7 @@ class _SingleState extends State<SingleScreen> {
     try {
       final result = await api.invokeMethod(method, args);
       apply(await api.invokeMapMethod('state'));
-      if (mounted && method == 'open' && result != null) {
+      if (mounted && (method == 'open' || method == 'relink') && result != null) {
         setState(() {
           library = false;
           tool = _Tool.source;
@@ -106,11 +113,9 @@ class _SingleState extends State<SingleScreen> {
         });
       }
       if (mounted && method == 'range') {
-        setState(() {
-          committed = true;
-          resetDraft();
-        });
+        setState(() { committed = true; resetDraft(); });
       }
+      if (method == 'restore' || method == 'open' || method == 'range' || method == 'relink') await refreshProjectCore();
     } on PlatformException catch (e) {
       try {
         apply(await api.invokeMapMethod('state'));
@@ -128,6 +133,77 @@ class _SingleState extends State<SingleScreen> {
         });
       }
     }
+  }
+
+  String newProjectId() {
+    final r=Random.secure();
+    return 'c${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}${List.generate(8,(_)=>r.nextInt(36).toRadixString(36)).join()}';
+  }
+
+  List<Map<String,dynamic>> get coreClips {
+    final track=projectCore?['mainTrack'];
+    if(track is! Map || track['clips'] is! List) return const [];
+    return (track['clips'] as List).cast<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
+  }
+
+  Future<void> refreshProjectCore() async {
+    try {
+      coreEnabled = await projectApi.invokeMethod<bool>('enabled') ?? false;
+      if (!coreEnabled) return;
+      final raw=await projectApi.invokeMethod<String>('snapshot');
+      projectCore=raw==null?null:jsonDecode(raw) as Map<String,dynamic>;
+      if(selectedCoreClip>=coreClips.length) selectedCoreClip=coreClips.isEmpty?0:coreClips.length-1;
+      if(mounted) setState((){});
+    } on PlatformException catch(e) {
+      if(mounted) setState(()=>coreStatus=e.code);
+    } on MissingPluginException { /* Non-Android widget preview. */ }
+  }
+
+  Future<void> coreEdit(String op,[Map<String,dynamic>? fields]) async {
+    if(!coreEnabled || coreBusy || projectCore==null || busy) return;
+    setState(()=>coreBusy=true);
+    final clips=coreClips;
+    if(clips.isEmpty){setState(()=>coreBusy=false);return;}
+    final index=selectedCoreClip.clamp(0,clips.length-1).toInt(),clip=clips[selectedCoreClip.clamp(0,clips.length-1).toInt()];
+    final cmd=<String,dynamic>{'op':op,'expectedRevision':projectCore!['revision'],...?fields};
+    if(op=='addClip') cmd['clip']={...clip,'id':newProjectId()};
+    if(op=='trimRight'||op=='split'){
+      cmd['id']=clip['id'];
+      final sourceAt=data['position'] as int? ?? 0;
+      final sequenceStart=clips.take(index).fold<int>(0,(sum,c)=>sum+(c['outUs'] as int)-(c['inUs'] as int));
+      cmd['atUs']=sequenceStart+(sourceAt-(clip['inUs'] as int));
+      if(op=='split')cmd['rightId']=newProjectId();
+    }
+    if(op=='delete')cmd['id']=clip['id'];
+    try {
+      final raw=await projectApi.invokeMethod<String>('edit',jsonEncode(cmd));
+      projectCore=raw==null?null:jsonDecode(raw) as Map<String,dynamic>;
+      if(op=='split')selectedCoreClip=index+1;
+      if(op=='addClip')selectedCoreClip=coreClips.length-1;
+      coreStatus='${AppLocalizations.of(context).coreApplied} · ${projectCore?['revision']}';
+      await refresh();
+    } on PlatformException catch(e) {
+      coreStatus='${e.code}${e.message==null?'':': ${e.message}'}';
+      await refreshProjectCore();
+    } finally {if(mounted)setState(()=>coreBusy=false);}
+  }
+
+  Future<void> reorderCoreClip(int oldIndex,int newIndex) async {
+    final clips=coreClips;if(clips.length<2)return;
+    var target=newIndex;if(target>oldIndex)target--;
+    target=target.clamp(0,clips.length-1).toInt();if(target==oldIndex)return;
+    final selectedId=clips[selectedCoreClip]['id'];final ids=clips.map((c)=>c['id'] as String).toList();
+    final moved=ids.removeAt(oldIndex);ids.insert(target,moved);
+    await coreEdit('orderClips',{'ids':ids});
+    selectedCoreClip=coreClips.indexWhere((c)=>c['id']==selectedId).clamp(0,coreClips.length-1).toInt();
+    if(mounted)setState((){});
+  }
+
+  Future<void> moveCoreClip(int delta) async {
+    final clips=coreClips;if(clips.isEmpty)return;
+    final next=(selectedCoreClip+delta).clamp(0,clips.length-1).toInt();if(next==selectedCoreClip)return;
+    final ids=clips.map((c)=>c['id'] as String).toList();final item=ids.removeAt(selectedCoreClip);ids.insert(next,item);
+    await coreEdit('orderClips',{'ids':ids});selectedCoreClip=next;if(mounted)setState((){});
   }
 
   void trim(int? a, int? b) {
@@ -149,6 +225,7 @@ class _SingleState extends State<SingleScreen> {
     'range' => t.badRange,
     'save' => t.projectError,
     'playError' => t.playError,
+    'multiPreviewUnavailable' => t.corePlaybackLimited,
     'exportError' => t.exportError,
     'space' => t.spaceError,
     'cancelled' => t.cancelled,
@@ -156,6 +233,17 @@ class _SingleState extends State<SingleScreen> {
     '' || 'idle' => '',
     _ => t.projectError,
   };
+  Future<void> relinkSource() async {
+    final t=AppLocalizations.of(context);
+    final proceed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+      title:Text(t.relinkSource),content:Text(t.relinkWarning),actions:[
+        TextButton(onPressed:()=>Navigator.pop(ctx,false),child:Text(t.cancel)),
+        FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:Text(t.relinkContinue)),
+      ],
+    ));
+    if(proceed==true&&mounted)await run('relink');
+  }
+
   Future<void> openSource() async {
     final t = AppLocalizations.of(context);
     if (data['name'] != null) {
@@ -376,12 +464,12 @@ class _SingleState extends State<SingleScreen> {
               ),
               const SizedBox(height: 8),
               metadata(),
-              Text(t.exportHint),
+              Text(data['playbackAvailable']==false ? t.corePlaybackLimited : t.exportHint),
               if (dirty)
                 Text(t.draft, style: const TextStyle(color: Mx.lightGold)),
               if (!exporting)
                 FilledButton.icon(
-                  onPressed: locked || dirty ? null : () => run('export'),
+                  onPressed: locked || dirty || data['playbackAvailable']==false ? null : () => run('export'),
                   icon: const MxIcon('export'),
                   label: Text(t.exportVideo),
                 ),
@@ -451,7 +539,7 @@ class _SingleState extends State<SingleScreen> {
       children: [
         IconButton(
           tooltip: data['playing'] == true ? t.pause : t.play,
-          onPressed: locked ? null : () => run('play'),
+          onPressed: locked || data['playbackAvailable']==false ? null : () => run('play'),
           icon: MxIcon(data['playing'] == true ? 'pause' : 'play'),
         ),
         Expanded(
@@ -471,11 +559,47 @@ class _SingleState extends State<SingleScreen> {
         const SizedBox(width: 8),
       ],
     );
-    Widget timeline() => SourceTimeline(
+    Widget coreTimelineActions() {
+      if(!coreEnabled || home || projectCore==null)return const SizedBox.shrink();
+      final clips=coreClips;
+      if(clips.isEmpty)return const SizedBox.shrink();
+      selectedCoreClip=selectedCoreClip.clamp(0,clips.length-1).toInt();
+      final chosen=clips[selectedCoreClip];
+      final canCut=(data['position'] is int) && (data['position'] as int)>=(chosen['inUs'] as int)+50000 && (data['position'] as int)<=(chosen['outUs'] as int)-50000;
+      return MxPanel(child:Padding(padding:const EdgeInsets.all(8),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        Text(t.coreMode,style:type.labelLarge),
+        SizedBox(height:48,child:ReorderableListView(
+          scrollDirection:Axis.horizontal,padding:EdgeInsets.zero,buildDefaultDragHandles:false,
+          onReorder:(oldIndex,newIndex){reorderCoreClip(oldIndex,newIndex);},
+          children:[for(int i=0;i<clips.length;i++)ReorderableDragStartListener(
+            key:ValueKey('core-clip-item-${clips[i]['id']}'),index:i,
+            child:ChoiceChip(key:ValueKey('core-clip-${clips[i]['id']}'),label:Text(clips[i]['id'] as String,textDirection:TextDirection.ltr),selected:i==selectedCoreClip,onSelected:coreBusy?null:(_){setState(()=>selectedCoreClip=i);}),
+          )],
+        )),
+        Wrap(spacing:4,runSpacing:0,children:[
+          TextButton(key:const ValueKey('core-add'),onPressed:coreBusy?null:()=>coreEdit('addClip'),child:Text(t.coreAdd)),
+          TextButton(key:const ValueKey('core-trim-end'),onPressed:coreBusy||!canCut?null:()=>coreEdit('trimRight'),child:Text(t.coreTrimEnd)),
+          TextButton(key:const ValueKey('core-split'),onPressed:coreBusy||!canCut?null:()=>coreEdit('split'),child:Text(t.coreSplit)),
+          TextButton(key:const ValueKey('core-delete'),onPressed:coreBusy||clips.length<2?null:()=>coreEdit('delete'),child:Text(t.coreDelete)),
+          TextButton(key:const ValueKey('core-left'),onPressed:coreBusy||selectedCoreClip==0?null:()=>moveCoreClip(-1),child:Text(t.coreMoveLeft)),
+          TextButton(key:const ValueKey('core-right'),onPressed:coreBusy||selectedCoreClip==clips.length-1?null:()=>moveCoreClip(1),child:Text(t.coreMoveRight)),
+          TextButton(key:const ValueKey('core-undo'),onPressed:coreBusy?null:()=>coreEdit('undo'),child:Text(t.coreUndo)),
+          TextButton(key:const ValueKey('core-redo'),onPressed:coreBusy?null:()=>coreEdit('redo'),child:Text(t.coreRedo)),
+        ]),
+        if(clips.length>1)Text(t.corePlaybackLimited,style:const TextStyle(color:Mx.muted)),
+        if(coreStatus.isNotEmpty)Semantics(liveRegion:true,child:Text(coreStatus,style:TextStyle(color:coreStatus.startsWith(t.coreApplied)?Mx.success:Mx.error))),
+      ])));
+    }
+    Widget timeline() {
+      final clips=coreClips;
+      final selected=coreEnabled && clips.isNotEmpty ? clips[selectedCoreClip.clamp(0,clips.length-1).toInt()] : null;
+      return Column(mainAxisSize:MainAxisSize.min,children:[
+      coreTimelineActions(),
+      SourceTimeline(
       duration: d!,
       position: drag ?? pos.toDouble(),
-      start: a,
-      end: b,
+      start: (selected?['inUs'] as int?) ?? a,
+      end: (selected?['outUs'] as int?) ?? b,
       name: name ?? t.source,
       selected: tool == _Tool.trim,
       onSelect: () => select(_Tool.trim),
@@ -484,7 +608,8 @@ class _SingleState extends State<SingleScreen> {
         setState(() => drag = null);
         run('seek', {'us': v.round()});
       },
-    );
+    )]);
+    }
     Widget workspace() => LayoutBuilder(
       builder: (ctx, box) {
         final wide =
@@ -631,6 +756,7 @@ class _SingleState extends State<SingleScreen> {
                         range: range,
                         status: note,
                         onImport: locked ? null : openSource,
+                        onRelink: issue == 'missing' && !locked ? relinkSource : null,
                         onResume: d == null
                             ? null
                             : () {

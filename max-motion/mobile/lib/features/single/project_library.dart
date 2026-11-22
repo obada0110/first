@@ -11,6 +11,7 @@ class ProjectLibrary extends StatelessWidget {
     required this.status,
     required this.onImport,
     required this.onResume,
+    required this.onRelink,
   });
   final String? name;
   final String range, status;
@@ -30,6 +31,8 @@ class ProjectLibrary extends StatelessWidget {
               name == null ? t.noHint : range,
               textDirection: name == null ? null : TextDirection.ltr,
             ),
+            if(onRelink!=null)
+              OutlinedButton.icon(key:const ValueKey('relink-source'),onPressed:onRelink,icon:const MxIcon('import'),label:Text(t.relinkSource)),
             if (onResume != null)
               OutlinedButton.icon(
                 key: const ValueKey('resume'),

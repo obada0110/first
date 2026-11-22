@@ -30,21 +30,26 @@ fun scene(p:JsonObject, pts:Long):JsonElement {
 }
 
 /** One in-memory writer. All candidate states validated before changing state or history. */
-class Session(private val validator:ProjectV1, initial:String) {
+class Session(private val validator:ProjectV1, initial:String, private val persist:(String)->Unit = {}) {
     var state=validator.parse(initial); private set
     private val past=ArrayDeque<JsonObject>(); private val future=ArrayDeque<JsonObject>()
     fun apply(c:JsonObject) {
         fun stringField(k:String) = c[k]?.jsonPrimitive?.isString == true
         require(stringField("op"));val op=c.s("op")
-        val args=when(op){"split"->setOf("id","atUs","rightId");"trimLeft","trimRight","putKey","removeKey"->if(op=="putKey")setOf("id","atUs","value") else setOf("id","atUs");"delete"->setOf("id");"order"->setOf("ids");"undo","redo"->emptySet();else->throw IllegalArgumentException("UNKNOWN_OP")}
-        require(c.keys==args+setOf("op","expectedRevision"));for(k in listOf("expectedRevision","atUs")) c[k]?.let {require(!it.jsonPrimitive.isString && it.jsonPrimitive.longOrNull!=null)}
+        val args=when(op){"addClip"->setOf("clip");"split"->setOf("id","atUs","rightId");"trimLeft","trimRight","putKey","removeKey"->if(op=="putKey")setOf("id","atUs","value") else setOf("id","atUs");"trimRange"->setOf("id","fromUs","toUs");"delete"->setOf("id");"order"->setOf("ids");"orderClips"->setOf("ids");"undo","redo"->emptySet();else->throw IllegalArgumentException("UNKNOWN_OP")}
+        require(c.keys==args+setOf("op","expectedRevision"));for(k in listOf("expectedRevision","atUs","fromUs","toUs")) c[k]?.let {require(!it.jsonPrimitive.isString && it.jsonPrimitive.longOrNull!=null)}
         for(k in listOf("id","rightId")) if(k in args)require(stringField(k))
         val p=state; val rev=p.n("revision"); require(c.n("expectedRevision")==rev){"STALE_REVISION"};require(rev<9007199254740991L){"REVISION_LIMIT"}
         val clips=Clock.clips(p).toMutableList();val ls=layers(p).toMutableList()
         val candidate=when(op){
-            "split","trimLeft","trimRight","delete" -> {
+            "addClip" -> { val clip=c.getValue("clip").jsonObject; track(p,clips+clip) }
+            "split","trimLeft","trimRight","trimRange","delete" -> {
                 val idx=clips.indexOfFirst{it.s("id")==c.s("id")};require(idx>=0){"UNKNOWN_ID"};val old=clips[idx]
-                if(op=="delete"){require(clips.size>1){"LAST_CLIP"};clips.removeAt(idx)} else {
+                if(op=="delete"){require(clips.size>1){"LAST_CLIP"};clips.removeAt(idx)} else if(op=="trimRange") {
+                    val from=c.n("fromUs");val to=c.n("toUs");require(from>=old.n("inUs") && to<=old.n("outUs") && to-from>=50000){"TIME_RANGE"}
+                    require(from==old.n("inUs") || from-old.n("inUs")>=50000){"CUT_MARGIN"};require(to==old.n("outUs") || old.n("outUs")-to>=50000){"CUT_MARGIN"}
+                    clips[idx]=old.with("inUs",JsonPrimitive(from)).with("outUs",JsonPrimitive(to))
+                } else {
                     val hit=Clock.locate(p,c.n("atUs"));require(hit!=null && hit.first==idx){"TIME_RANGE"};val time=hit.second
                     require(time-old.n("inUs")>=50000 && old.n("outUs")-time>=50000){"CUT_MARGIN"}
                     val left=old.with("outUs",JsonPrimitive(time));val right=old.with("inUs",JsonPrimitive(time));clips[idx]=if(op=="trimLeft") right else left
@@ -52,6 +57,7 @@ class Session(private val validator:ProjectV1, initial:String) {
                 };track(p,clips)
             }
             "order" -> {val ids=c.getValue("ids").jsonArray.map{it.jsonPrimitive.content};val by=ls.associateBy{it.s("id")};require(ids.size==by.size && ids.toSet()==by.keys){"BAD_ORDER"};p.with("layers",JsonArray(ids.map{by.getValue(it)}))}
+            "orderClips" -> { val ids=c.getValue("ids").jsonArray.map{it.jsonPrimitive.content};val by=clips.associateBy{it.s("id")};require(ids.size==by.size && ids.toSet()==by.keys){"BAD_ORDER"};track(p,ids.map{by.getValue(it)}) }
             "putKey","removeKey" -> {val id=c.s("id");val ci=clips.indexOfFirst{it.s("id")==id};val li=ls.indexOfFirst{it.s("id")==id};require(ci>=0||li>=0){"UNKNOWN_ID"}
                 val item=if(ci>=0) clips[ci] else ls[li];val t=c.n("atUs");val tr=obj(item,"transform");val keys=tr.items("keys").toMutableList();val removed=keys.firstOrNull{it.n("atUs")==t};keys.remove(removed)
                 var base=tr
@@ -64,6 +70,7 @@ class Session(private val validator:ProjectV1, initial:String) {
             else -> throw IllegalArgumentException("UNKNOWN_OP")
         }
         val checked=validator.parse(candidate.with("revision",JsonPrimitive(rev+1)).toString())
+        persist(checked.toString())
         when(op){"undo"->{past.removeLast();future.addLast(p)};"redo"->{future.removeLast();past.addLast(p)};else->{past.addLast(p);if(past.size>100)past.removeFirst();future.clear()}}
         state=checked
     }

@@ -84,5 +84,19 @@
   "backProjects": "Back to projects",
   "ready": "Saved locally",
   "reviewFile": "File details",
-  "trackHint": "Select clip and inspect trim"
+  "trackHint": "Select clip and inspect trim",
+  "coreMode": "Experimental shared-core editing",
+  "coreAdd": "Add clip",
+  "coreTrimEnd": "Trim end at playhead",
+  "coreSplit": "Split at playhead",
+  "coreDelete": "Delete clip",
+  "coreMoveLeft": "Move left",
+  "coreMoveRight": "Move right",
+  "coreUndo": "Undo",
+  "coreRedo": "Redo",
+  "coreApplied": "Shared-core edit saved",
+  "corePlaybackLimited": "Source preview only: sequence playback and multi-clip export are not available in this phase.",
+  "relinkSource": "Relink source file",
+  "relinkWarning": "Select the same original file. Contract v1 has no content hash to verify it; the asset ID will stay stable, but choosing different media changes its content without changing that ID.",
+  "relinkContinue": "Choose source file"
 }

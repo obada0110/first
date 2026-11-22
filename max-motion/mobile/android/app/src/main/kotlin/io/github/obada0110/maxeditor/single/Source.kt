@@ -36,9 +36,9 @@ class SourceStore(private val c:Context) {
     private val disk=AtomicCheckpoint(path)
     private val bindings=c.getSharedPreferences("single_asset_uris",0)
     fun restore():JsonObject? = try {validator.parse(disk.read())} catch(e:java.io.FileNotFoundException){if(path.exists())throw e else null}
-    fun uri(p:JsonObject):Uri=Uri.parse(requireNotNull(bindings.getString(Clock.clips(p).single().s("assetId"),null)))
+    fun uri(p:JsonObject):Uri=Uri.parse(requireNotNull(bindings.getString(Clock.clips(p).first().s("assetId"),null)))
     fun create(uri:Uri, info:Source):JsonObject {
-        val id="a"+UUID.randomUUID(); val old=restore(); val oldId=old?.let{Clock.clips(it).single().s("assetId")}; val oldUri=old?.let{uri(it)}
+        val id="a"+UUID.randomUUID(); val old=restore(); val oldId=old?.let{Clock.clips(it).first().s("assetId")}; val oldUri=old?.let{uri(it)}
         val name=c.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use {if(it.moveToFirst())it.getString(0) else null}?.take(120)?.ifBlank{null}?:"Video"
         val scale=minOf(1.0,3840.0/maxOf(info.displayWidth,info.displayHeight));fun side(n:Int)=((n*scale).toInt()/2*2).coerceIn(64,3840)
         val base=buildJsonObject{ mapOf("x" to 50,"y" to 50,"w" to 100,"h" to 100,"angle" to 0,"opacity" to 100,"cropX" to 0,"cropY" to 0).forEach{(k,v)->put(k,v)} }
@@ -53,6 +53,20 @@ class SourceStore(private val c:Context) {
         validator.parse(p.toString());check(bindings.edit().putString(id,uri.toString()).commit());disk.write(p.toString())
         if(oldId!=null){bindings.edit().remove(oldId).apply();if(oldUri!=uri && oldUri!=null)runCatching{c.contentResolver.releasePersistableUriPermission(oldUri,1)}}
         return p
+    }
+    fun relink(uri:Uri, info:Source):JsonObject {
+        val project=requireNotNull(restore())
+        val assets=project.items("assets");require(assets.size==1 && assets.single().s("kind")=="video")
+        val asset=assets.single();require(info.duration>=asset.n("durationUs"))
+        val old=bindings.getString(asset.s("id"),null)?.let{Uri.parse(it)}
+        check(bindings.edit().putString(asset.s("id"),uri.toString()).commit())
+        if(old!=null && old!=uri)runCatching{c.contentResolver.releasePersistableUriPermission(old,1)}
+        return project
+    }
+    fun save(p:JsonObject):JsonObject {
+        val checked=validator.parse(p.toString())
+        val old=restore();require(old==null || old.s("projectId")==checked.s("projectId"))
+        disk.write(checked.toString());return checked
     }
     fun range(p:JsonObject,start:Long,end:Long):JsonObject {
         val duration=p.items("assets").single().n("durationUs");require(start>=0 && end<=duration && end-start>=50_000 && (start==0L || start>=50_000) && (end==duration || duration-end>=50_000))

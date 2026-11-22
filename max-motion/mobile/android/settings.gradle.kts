@@ -26,3 +26,7 @@ plugins {
 
 include(":app")
 include(":contractCheck")
+
+// Shared Kotlin Multiplatform edit engine. This is an app dependency; legacy remains the default.
+include(":maxCore")
+project(":maxCore").projectDir = file("../../core-kmp")

@@ -10,6 +10,7 @@ export NODE_PATH="$D/node_modules"
 "$D/node_modules/.bin/esbuild" build/compileSync/js/main/productionExecutable/kotlin/maxcore.mjs --bundle --minify --format=esm --platform=browser --outfile=proof/js/max-core.mjs
 gzip -n -9 -c proof/js/max-core.mjs > proof/js/max-core.mjs.gz
 java -cp 'proof/jvm/*' probe.Probe proof/fixtures proof/records/jvm-trace.json
+java -cp 'proof/jvm/*' coretests.ProductionOps fixtures/project-v1.json fixtures/project.json >proof/records/production-ops.json
 /usr/bin/time -f '%M' -o proof/records/jvm-process-peak-rss-KiB.txt java -Xmx512m -cp 'proof/jvm/*' probe.Bench proof/fixtures proof/records/jvm-perf.json
 node tools/browser.cjs
 python3 tools/compare.py jvm browser

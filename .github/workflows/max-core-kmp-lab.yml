@@ -2,7 +2,7 @@ name: Isolated MAX CORE KMP proof
 on:
   push:
     branches: ['arena/bff96530-first']
-    paths: ['experiments/max-core-kmp/**', '.github/workflows/max-core-kmp-lab.yml']
+    paths: ['experiments/max-core-kmp/**', 'max-motion/core-kmp/**', '.github/workflows/max-core-kmp-lab.yml']
 permissions:
   contents: read
 jobs:
@@ -25,8 +25,10 @@ jobs:
           java-version: '17'
       - name: Verify frozen production tree and fixtures
         run: |
-          git diff --exit-code 7c13420462ce2ca35861a2ceb08652d4d7588474 HEAD -- ../../max-motion ../../docs ../../design
-          test -z "$(git diff --name-only --diff-filter=MDRT 7c13420462ce2ca35861a2ceb08652d4d7588474 HEAD)"
+          git -C "$GITHUB_WORKSPACE" diff --exit-code 9fba216f7652eb7bef580ddd6b9a30da0283aefa HEAD -- max-motion/contract max-motion/docs design
+          # Phase 3A's reviewed Android integration is intentionally limited to this allowlist.
+          disallowed=$(git -C "$GITHUB_WORKSPACE" diff --name-only 9fba216f7652eb7bef580ddd6b9a30da0283aefa HEAD -- max-motion | grep -Ev '^(max-motion/mobile/(android/(settings.gradle.kts|build.gradle.kts|app/build.gradle.kts|app/src/main/kotlin/io/github/obada0110/maxeditor/single/(SingleChannel|Source|ProductionProjectSession)\.kt)|lib/features/single/(single_screen|project_library)\.dart|lib/l10n/app_(ar|en)\.arb|integration_test/core_edit_android_test\.dart|tool/core_qa/)|max-motion/core-kmp/)' || true)
+          test -z "$disallowed" || { echo "$disallowed"; exit 1; }
           cmp fixtures/project-v1.json ../../max-motion/contract/schema/project-v1.json
           for x in project vectors; do cmp fixtures/$x.json ../../max-motion/contract/fixtures/$x.json; done
       - name: Build the two targets
