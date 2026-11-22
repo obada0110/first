@@ -30,10 +30,15 @@ jobs:
           python - <<'PY'
           import subprocess
           names=subprocess.check_output(['git','diff','--name-only','9fba216f7652eb7bef580ddd6b9a30da0283aefa','HEAD','--','max-motion']).decode().splitlines()
-          allowed=('max-motion/mobile/android/settings.gradle.kts','max-motion/mobile/android/build.gradle.kts','max-motion/mobile/android/app/build.gradle.kts','max-motion/mobile/android/app/src/main/kotlin/io/github/obada0110/maxeditor/single/SingleChannel.kt','max-motion/mobile/android/app/src/main/kotlin/io/github/obada0110/maxeditor/single/Source.kt','max-motion/mobile/android/app/src/main/kotlin/io/github/obada0110/maxeditor/single/ProductionProjectSession.kt','max-motion/mobile/lib/features/single/single_screen.dart','max-motion/mobile/lib/features/single/project_library.dart','max-motion/mobile/lib/l10n/app_ar.arb','max-motion/mobile/lib/l10n/app_en.arb','max-motion/mobile/integration_test/core_edit_android_test.dart','max-motion/mobile/tool/core_qa/')
+          allowed=('max-motion/mobile/android/settings.gradle.kts','max-motion/mobile/android/build.gradle.kts','max-motion/mobile/android/app/build.gradle.kts','max-motion/mobile/android/app/src/main/kotlin/io/github/obada0110/maxeditor/single/SingleChannel.kt','max-motion/mobile/android/app/src/main/kotlin/io/github/obada0110/maxeditor/single/Source.kt','max-motion/mobile/android/app/src/main/kotlin/io/github/obada0110/maxeditor/single/ProductionProjectSession.kt','max-motion/mobile/lib/features/single/single_screen.dart','max-motion/mobile/lib/features/single/project_library.dart','max-motion/mobile/lib/l10n/app_ar.arb','max-motion/mobile/lib/l10n/app_en.arb','max-motion/mobile/integration_test/core_edit_android_test.dart','max-motion/mobile/tool/core_qa/','max-motion/ANDROID-STATUS-REPORT-AR.md','max-motion/web/')
           allowed=allowed+('max-motion/core-kmp/',)
           bad=[n for n in names if not any(n==a or n.startswith(a) for a in allowed)]
           assert not bad,bad
+          from pathlib import Path
+          for archived in Path('max-motion/web').rglob('*'):
+            if archived.is_file() and archived.name!='README.md':
+              source=Path('max-motion')/archived.relative_to('max-motion/web')
+              assert source.is_file() and source.read_bytes()==archived.read_bytes(),f'web snapshot drift: {archived}'
           PY
           cmp experiments/max-core-kmp/fixtures/project-v1.json max-motion/contract/schema/project-v1.json
       - name: Flutter analysis and unit tests
