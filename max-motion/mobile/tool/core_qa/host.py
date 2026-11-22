@@ -39,6 +39,9 @@ class Handler(BaseHTTPRequestHandler):
    body=json.loads(self.rfile.read(int(self.headers['Content-Length'])));name=urllib.parse.urlparse(self.path).path.strip('/').split('/')[-1]
    if name=='metrics':(out/'metrics.json').write_text(json.dumps(body,indent=2));data=b'ok'
    elif name.startswith('frame-'):
+    print('FRAME_REQUEST',name,repr(body),flush=True)
+    missing=[k for k in ('w','h','x','y') if body.get(k) is None]
+    if missing:raise ValueError(('missing frame coordinates',missing,body))
     w,h,x,y=[int(body[k]) for k in ('w','h','x','y')];assert min(w,h)>=16
     shot=out/(name+'.png');shot.write_bytes(adb('exec-out','screencap','-p'))
     raw=sp.check_output(['ffmpeg','-v','error','-i',str(shot),'-vf',f'crop={w}:{h}:{x}:{y},scale=64:64','-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','-threads','1','pipe:1'])
