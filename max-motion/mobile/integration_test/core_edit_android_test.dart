@@ -24,7 +24,7 @@ void main(){
   await host('pick/mx-land.mp4');await legacy.invokeMethod('open').timeout(const Duration(seconds:60));await waitState((s)=>s['duration']!=null);
   await tester.pump();await tester.pump(const Duration(milliseconds:500));var p=await snapshot();expect(p['schemaVersion'],1);expect((p['mainTrack']['clips'] as List).length,1);expect(p['revision'],0);
   await host('shot/phase3a-before-editor');
-  await legacy.invokeMethod('play');await waitState((s)=>(s['position'] as int)>800000&&s['playing']==true);final live=await frame('frame-live');stdout.writeln('FRAME_LIVE ${jsonEncode(live)}');expect(live['renderedFrames'],greaterThan(0),'ExoPlayer must report a frame rendered to the real preview surface');
+  await legacy.invokeMethod('play');await waitState((s)=>(s['position'] as int)>800000&&s['playing']==true);final live=await frame('frame-live');stdout.writeln('FRAME_LIVE ${jsonEncode(live)}');expect(live['renderedFrames'],greaterThan(0),reason:'ExoPlayer must report a frame rendered to the real preview surface');
   await legacy.invokeMethod('play');await waitState((s)=>s['playing']==false);await legacy.invokeMethod('restore');await waitState((s)=>s['playing']==false);await tester.pump(const Duration(seconds:2));final restoredFrame=await frame('frame-restored');stdout.writeln('FRAME_RESTORED ${jsonEncode(restoredFrame)}');
   await tapKey('core-add');await revision(1);p=await snapshot();expect((p['mainTrack']['clips'] as List).length,2);final ids0=(p['mainTrack']['clips'] as List).map((c)=>c['id']).toList();expect(ids0.toSet().length,2);
   await legacy.invokeMethod('seek',{'us':3000000});await waitState((s)=>(s['position'] as int)>=2900000);
