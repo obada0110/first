@@ -54,7 +54,10 @@ jobs:
         working-directory: max-motion/mobile
         run: |
           set -euo pipefail
-          flutter build apk --debug
+          if ! flutter build apk --debug 2>&1 | tee "$RUNNER_TEMP/android-legacy-build.log"; then
+            python3 tool/build_diagnostic.py "$RUNNER_TEMP/android-legacy-build.log"
+            exit 1
+          fi
           cp build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/max-editor-legacy-debug.apk"
           rg -q 'MAX_CORE_EDITOR_ENABLED = false' android/app/build/generated/source/buildConfig/debug/io/github/obada0110/maxeditor/BuildConfig.java
       - name: Build isolated core-enabled debug APK; release configuration remains disabled
@@ -63,7 +66,10 @@ jobs:
           ORG_GRADLE_PROJECT_maxCoreEditorEnabled: 'true'
         run: |
           set -euo pipefail
-          flutter build apk --debug
+          if ! flutter build apk --debug 2>&1 | tee "$RUNNER_TEMP/android-core-build.log"; then
+            python3 tool/build_diagnostic.py "$RUNNER_TEMP/android-core-build.log"
+            exit 1
+          fi
           cp build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/MAX-EDITOR-Phase-3A-Core-Debug.apk"
           rg -q 'MAX_CORE_EDITOR_ENABLED = true' android/app/build/generated/source/buildConfig/debug/io/github/obada0110/maxeditor/BuildConfig.java
       - name: Allow KVM for the isolated emulator
