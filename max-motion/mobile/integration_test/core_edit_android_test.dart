@@ -57,7 +57,7 @@ void main(){
   // RTL/LTR remain the existing app locale behavior while the production controls are mounted.
   await tester.tap(find.byKey(const ValueKey('settings')));await tester.pump();await tester.pump(const Duration(milliseconds:500));
   for(final lang in ['en','ar']){await tester.tap(find.byKey(ValueKey(lang)));await tester.pump();await tester.pump(const Duration(milliseconds:500));expect(Localizations.localeOf(tester.element(find.byKey(ValueKey(lang)))).languageCode,lang);expect(Directionality.of(tester.element(find.byKey(ValueKey(lang)))),lang=='ar'?TextDirection.rtl:TextDirection.ltr);}
-  await tester.pageBack();await tester.pump();await tester.pump(const Duration(milliseconds:500));
+  final settingsBack=find.byType(BackButton);expect(settingsBack,findsOneWidget);await tester.tap(settingsBack);await tester.pump();await tester.pump(const Duration(milliseconds:500));
   await host('rotate/landscape');await tester.pump(const Duration(seconds:3));final rotatedFrame=await frame('frame-rotated');stdout.writeln('FRAME_ROTATED ${jsonEncode(rotatedFrame)}');await host('rotate/portrait');await tester.pump(const Duration(seconds:3));
   // Independent 22-clip file/state stress after UI acceptance; no UI project changes are pending.
   final memoryBefore=await memory();final samples=<double>[];final base=Map<String,dynamic>.from(p['mainTrack']['clips'][0] as Map);
