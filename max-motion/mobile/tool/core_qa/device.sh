@@ -7,8 +7,14 @@ adb push "$QA/fixtures/mx-land.mp4" /sdcard/Download/mx-land.mp4 >/dev/null
 adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/mx-land.mp4 >/dev/null
 adb reverse tcp:8765 tcp:8765
 python3 -u tool/core_qa/host.py >"$QA/evidence/host.log" 2>&1 & host=$!;trap 'kill "$host" || true;adb logcat -d -t 2500 > "$QA/evidence/android.log"' EXIT
-flutter test --no-pub integration_test/core_edit_android_test.dart -d emulator-5554 --reporter expanded 2>&1|tee "$QA/evidence/integration.log"
-python3 tool/core_qa/cold.py 2>&1|tee "$QA/evidence/cold-reopen.log"
+if ! flutter test --no-pub integration_test/core_edit_android_test.dart -d emulator-5554 --reporter expanded 2>&1 | tee "$QA/evidence/integration.log"; then
+  python3 tool/core_qa/ci_diagnostic.py "$QA/evidence/integration.log" "Android emulator integration"
+  exit 1
+fi
+if ! python3 tool/core_qa/cold.py 2>&1 | tee "$QA/evidence/cold-reopen.log"; then
+  python3 tool/core_qa/ci_diagnostic.py "$QA/evidence/cold-reopen.log" "Android cold-reopen and relink"
+  exit 1
+fi
 # Explicit rollback validation: reinstall the default-off APK, clear only this disposable emulator, and run the existing production Android suite.
 unset ORG_GRADLE_PROJECT_maxCoreEditorEnabled
 cp "$RUNNER_TEMP/max-editor-legacy-debug.apk" "$RUNNER_TEMP/normal.apk"
