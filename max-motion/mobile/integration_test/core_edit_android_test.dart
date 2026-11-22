@@ -23,6 +23,7 @@ void main(){
   expect(await core.invokeMethod<bool>('enabled'),isTrue);
   await host('pick/mx-land.mp4');await legacy.invokeMethod('open').timeout(const Duration(seconds:60));await waitState((s)=>s['duration']!=null);
   await tester.pump();await tester.pump(const Duration(milliseconds:500));var p=await snapshot();expect(p['schemaVersion'],1);expect((p['mainTrack']['clips'] as List).length,1);expect(p['revision'],0);
+  await binding.convertFlutterSurfaceToImage();await tester.pump();
   await binding.takeScreenshot('phase3a-before-editor');
   await legacy.invokeMethod('play');await waitState((s)=>(s['position'] as int)>800000&&s['playing']==true);final live=await frame('frame-live');stdout.writeln('FRAME_LIVE ${jsonEncode(live)}');expect(live['saturated'],greaterThan(500));
   await legacy.invokeMethod('play');await waitState((s)=>s['playing']==false);await legacy.invokeMethod('restore');await waitState((s)=>s['playing']==false);await tester.pump(const Duration(seconds:2));final restoredFrame=await frame('frame-restored');stdout.writeln('FRAME_RESTORED ${jsonEncode(restoredFrame)}');
