@@ -588,7 +588,7 @@ class _SingleState extends State<SingleScreen> {
           TextButton(key:const ValueKey('core-redo'),onPressed:coreBusy?null:()=>coreEdit('redo'),child:Text(t.coreRedo)),
         ]),
         if(clips.length>1)Text(t.corePlaybackLimited,style:const TextStyle(color:Mx.muted)),
-        if(coreStatus.isNotEmpty)Semantics(liveRegion:true,child:Text(coreStatus,style:TextStyle(color:coreStatus.startsWith(t.coreApplied)?Mx.success:Mx.error))),
+        if(coreStatus.isNotEmpty)Semantics(liveRegion:true,child:Text(coreStatus,key:const ValueKey('core-status'),style:TextStyle(color:coreStatus.startsWith(t.coreApplied)?Mx.success:Mx.error))),
       ])));
     }
     Widget timeline() {
