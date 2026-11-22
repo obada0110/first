@@ -7,7 +7,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:max_editor/main.dart' as app;
 
 void main(){
- final binding=IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+ IntegrationTestWidgetsFlutterBinding.ensureInitialized();
  testWidgets('real MAX EDITOR screen uses durable shared core behind debug-only flag',(tester)async{
   const legacy=MethodChannel('max_editor/single/v1'),core=MethodChannel('max_editor/project_core/v1');
   Future<void> host(String path)async{final c=HttpClient();try{final r=await(await c.getUrl(Uri.parse('http://127.0.0.1:8765/$path'))).close();expect(r.statusCode,200);await r.drain<void>();}finally{c.close();}}
