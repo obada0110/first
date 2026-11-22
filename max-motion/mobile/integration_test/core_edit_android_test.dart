@@ -32,7 +32,8 @@ void main(){
   await legacy.invokeMethod('seek',{'us':3000000});await waitState((s)=>(s['position'] as int)>=2900000);await tester.pump(const Duration(milliseconds:300));
   final trimButton=tester.widget<TextButton>(find.byKey(const ValueKey('core-trim-end')));final trimState=await legacy.invokeMapMethod('state');expect(trimButton.onPressed,isNotNull,reason:'trim-right action should be enabled at an interior playhead; native=$trimState; project=$p');
   await tapKey('core-trim-end');await revision(2);p=await snapshot();expect((p['mainTrack']['clips'][1]['outUs']),3000000);
-  await legacy.invokeMethod('seek',{'us':1500000});await waitState((s)=>(s['position'] as int)>=1400000);
+  await tester.tap(find.byKey(ValueKey('core-clip-${ids0[1]}')));await tester.pump();await legacy.invokeMethod('seek',{'us':1500000});await waitState((s)=>(s['position'] as int)>=1400000);await tester.pump(const Duration(milliseconds:300));
+  final splitButton=tester.widget<TextButton>(find.byKey(const ValueKey('core-split')));final splitState=await legacy.invokeMapMethod('state');expect(splitButton.onPressed,isNotNull,reason:'split action should be enabled at an interior playhead; native=$splitState; project=$p');
   await tapKey('core-split');await revision(3);p=await snapshot();expect((p['mainTrack']['clips'] as List).length,3);final splitId=p['mainTrack']['clips'][2]['id'];expect(p['mainTrack']['clips'][2]['inUs'],1500000);
   await tapKey('core-left');await revision(4);p=await snapshot();expect(p['mainTrack']['clips'][0]['id'],ids0[0]);
   // A second move verifies ordered clips while retaining all stable IDs.
