@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:max_editor/main.dart' as app;
@@ -28,7 +28,9 @@ void main(){
   await legacy.invokeMethod('play');await waitState((s)=>(s['position'] as int)>800000&&s['playing']==true);final live=await frame('frame-live');stdout.writeln('FRAME_LIVE ${jsonEncode(live)}');expect(live['renderedFrames'],greaterThan(0),reason:'ExoPlayer must report a frame rendered to the real preview surface');
   await legacy.invokeMethod('play');await waitState((s)=>s['playing']==false);await legacy.invokeMethod('restore');final restoredState=await waitState((s)=>s['playing']==false);await tester.pump(const Duration(seconds:2));await waitKey('core-add');final restoredFrame=await frame('frame-restored');stdout.writeln('FRAME_RESTORED ${jsonEncode({...restoredFrame,'duration':restoredState['duration'],'issue':restoredState['issue'],'coreRevision':(await snapshot())['revision']})}');
   await tapKey('core-add');await revision(1);p=await snapshot();expect((p['mainTrack']['clips'] as List).length,2);final ids0=(p['mainTrack']['clips'] as List).map((c)=>c['id']).toList();expect(ids0.toSet().length,2);
-  await legacy.invokeMethod('seek',{'us':3000000});await waitState((s)=>(s['position'] as int)>=2900000);
+  final secondClip=find.byKey(ValueKey('core-clip-${ids0[1]}'));await tester.ensureVisible(secondClip);await tester.tap(secondClip);await tester.pump();
+  await legacy.invokeMethod('seek',{'us':3000000});await waitState((s)=>(s['position'] as int)>=2900000);await tester.pump(const Duration(milliseconds:300));
+  final trimButton=tester.widget<TextButton>(find.byKey(const ValueKey('core-trim-end')));final trimState=await legacy.invokeMapMethod('state');expect(trimButton.onPressed,isNotNull,reason:'trim-right action should be enabled at an interior playhead; native=$trimState; project=$p');
   await tapKey('core-trim-end');await revision(2);p=await snapshot();expect((p['mainTrack']['clips'][1]['outUs']),3000000);
   await legacy.invokeMethod('seek',{'us':1500000});await waitState((s)=>(s['position'] as int)>=1400000);
   await tapKey('core-split');await revision(3);p=await snapshot();expect((p['mainTrack']['clips'] as List).length,3);final splitId=p['mainTrack']['clips'][2]['id'];expect(p['mainTrack']['clips'][2]['inUs'],1500000);
