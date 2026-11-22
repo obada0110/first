@@ -23,8 +23,7 @@ void main(){
   expect(await core.invokeMethod<bool>('enabled'),isTrue);
   await host('pick/mx-land.mp4');await legacy.invokeMethod('open').timeout(const Duration(seconds:60));await waitState((s)=>s['duration']!=null);
   await tester.pump();await tester.pump(const Duration(milliseconds:500));var p=await snapshot();expect(p['schemaVersion'],1);expect((p['mainTrack']['clips'] as List).length,1);expect(p['revision'],0);
-  await binding.convertFlutterSurfaceToImage();await tester.pump();
-  await binding.takeScreenshot('phase3a-before-editor');
+  await host('shot/phase3a-before-editor');
   await legacy.invokeMethod('play');await waitState((s)=>(s['position'] as int)>800000&&s['playing']==true);final live=await frame('frame-live');stdout.writeln('FRAME_LIVE ${jsonEncode(live)}');expect(live['saturated'],greaterThan(500));
   await legacy.invokeMethod('play');await waitState((s)=>s['playing']==false);await legacy.invokeMethod('restore');await waitState((s)=>s['playing']==false);await tester.pump(const Duration(seconds:2));final restoredFrame=await frame('frame-restored');stdout.writeln('FRAME_RESTORED ${jsonEncode(restoredFrame)}');
   await tapKey('core-add');await revision(1);p=await snapshot();expect((p['mainTrack']['clips'] as List).length,2);final ids0=(p['mainTrack']['clips'] as List).map((c)=>c['id']).toList();expect(ids0.toSet().length,2);
@@ -50,7 +49,7 @@ void main(){
   }
   p=await snapshot();var persisted=await checkpoint();expect(persisted,p);expect(persisted['schemaVersion'],1);expect(persisted['projectId'],p['projectId']);expect((persisted['assets'] as List).map((a)=>a['id']).toList(),(p['assets'] as List).map((a)=>a['id']).toList());
   final dragSorted=[...dragTimes]..sort();final uiPerf={'clipReorderDrags':dragTimes.length,'medianHarnessMs':dragSorted[dragSorted.length~/2],'maxHarnessMs':dragSorted.last,'revision':p['revision']};stdout.writeln('UI_DRAG ${jsonEncode(uiPerf)}');
-  await binding.takeScreenshot('phase3a-after-seven-commands-and-drag');
+  await host('shot/phase3a-after-seven-commands-and-drag');
   // RTL/LTR remain the existing app locale behavior while the production controls are mounted.
   await tester.tap(find.byKey(const ValueKey('settings')));await tester.pump();await tester.pump(const Duration(milliseconds:500));
   for(final lang in ['en','ar']){await tester.tap(find.byKey(ValueKey(lang)));await tester.pump();await tester.pump(const Duration(milliseconds:500));expect(Localizations.localeOf(tester.element(find.byKey(ValueKey(lang)))).languageCode,lang);expect(Directionality.of(tester.element(find.byKey(ValueKey(lang)))),lang=='ar'?TextDirection.rtl:TextDirection.ltr);}
