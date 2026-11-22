@@ -10,7 +10,7 @@ object ProductionOps {
   val schema=File(args[0]).readText();val project=File(args[1]).readText();val validator=ProjectV1(schema);var disk=validator.parse(project).toString();val rows=mutableListOf<String>()
   val session=Session(validator,disk){candidate->disk=validator.parse(candidate).toString()}
   fun apply(op:String,vararg args:Pair<String,JsonElement>){val c=buildJsonObject{put("op",op);put("expectedRevision",session.state.n("revision"));for((k,v) in args)put(k,v)};session.apply(c);check(disk==session.state.toString());validator.parse(disk);rows+=op}
-  val first=Clock.clips(session.state).first();apply("addClip","clip" to (first.with("id",JsonPrimitive("newClip"))))
+  val source=Clock.clips(session.state).first{it.s("id")=="cA"};apply("addClip","clip" to (source.with("id",JsonPrimitive("newClip"))))
   apply("trimRight","id" to JsonPrimitive("newClip"),"atUs" to JsonPrimitive(7_000_000))
   apply("split","id" to JsonPrimitive("newClip"),"atUs" to JsonPrimitive(7_000_000),"rightId" to JsonPrimitive("splitClip"))
   apply("orderClips","ids" to JsonArray(Clock.clips(session.state).reversed().map{JsonPrimitive(it.s("id"))}))

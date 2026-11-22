@@ -42,8 +42,14 @@ jobs:
           set -euo pipefail
           flutter pub get
           flutter gen-l10n
-          flutter analyze
-          flutter test
+          if ! flutter analyze 2>&1 | tee "$RUNNER_TEMP/flutter-analyze.log"; then
+            python3 tool/core_qa/ci_diagnostic.py "$RUNNER_TEMP/flutter-analyze.log" "Flutter analyze"
+            exit 1
+          fi
+          if ! flutter test 2>&1 | tee "$RUNNER_TEMP/flutter-test.log"; then
+            python3 tool/core_qa/ci_diagnostic.py "$RUNNER_TEMP/flutter-test.log" "Flutter tests"
+            exit 1
+          fi
       - name: Build default debug app; verify feature flag is off
         working-directory: max-motion/mobile
         run: |
