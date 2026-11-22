@@ -18,14 +18,15 @@ void main(){
   Future<Map> checkpoint()async{final c=HttpClient();try{final r=await(await c.getUrl(Uri.parse('http://127.0.0.1:8765/checkpoint'))).close();expect(r.statusCode,200);return jsonDecode(await r.transform(utf8.decoder).join()) as Map;}finally{c.close();}}
   Future<Map> waitState(bool Function(Map) ok)async{for(var i=0;i<100;i++){final s=(await legacy.invokeMapMethod('state'))!;if(ok(s))return s;await tester.pump(const Duration(milliseconds:100));}throw StateError('timeout ${(await legacy.invokeMapMethod('state'))}');}
   Future<void> tapKey(String key)async{final f=find.byKey(ValueKey(key));expect(f,findsOneWidget);await tester.ensureVisible(f);await tester.tap(f);await tester.pump();await tester.pump(const Duration(milliseconds:400));}
+  Future<void> waitKey(String key)async{final f=find.byKey(ValueKey(key));for(var i=0;i<50;i++){if(f.evaluate().isNotEmpty)return;await tester.pump(const Duration(milliseconds:100));}final state=await legacy.invokeMapMethod('state');final project=await snapshot();fail('widget $key did not appear; native=$state; project=$project');}
   Future<void> revision(int n)async{for(var i=0;i<60;i++){if((await snapshot())['revision']==n)return;await tester.pump(const Duration(milliseconds:100));}fail('revision $n not reached: ${await snapshot()}');}
   await app.main();await tester.pump();await Future<void>.delayed(const Duration(seconds:1));await tester.pump();
   expect(await core.invokeMethod<bool>('enabled'),isTrue);
-  await host('pick/mx-land.mp4');await legacy.invokeMethod('open').timeout(const Duration(seconds:60));await waitState((s)=>s['duration']!=null);
+  await host('pick/mx-land.mp4');await tapKey('import');await waitState((s)=>s['duration']!=null);await waitKey('core-add');
   await tester.pump();await tester.pump(const Duration(milliseconds:500));var p=await snapshot();expect(p['schemaVersion'],1);expect((p['mainTrack']['clips'] as List).length,1);expect(p['revision'],0);
   await host('shot/phase3a-before-editor');
   await legacy.invokeMethod('play');await waitState((s)=>(s['position'] as int)>800000&&s['playing']==true);final live=await frame('frame-live');stdout.writeln('FRAME_LIVE ${jsonEncode(live)}');expect(live['renderedFrames'],greaterThan(0),reason:'ExoPlayer must report a frame rendered to the real preview surface');
-  await legacy.invokeMethod('play');await waitState((s)=>s['playing']==false);await legacy.invokeMethod('restore');await waitState((s)=>s['playing']==false);await tester.pump(const Duration(seconds:2));final restoredFrame=await frame('frame-restored');stdout.writeln('FRAME_RESTORED ${jsonEncode(restoredFrame)}');
+  await legacy.invokeMethod('play');await waitState((s)=>s['playing']==false);await legacy.invokeMethod('restore');final restoredState=await waitState((s)=>s['playing']==false);await tester.pump(const Duration(seconds:2));await waitKey('core-add');final restoredFrame=await frame('frame-restored');stdout.writeln('FRAME_RESTORED ${jsonEncode({...restoredFrame,'duration':restoredState['duration'],'issue':restoredState['issue'],'coreRevision':(await snapshot())['revision']})}');
   await tapKey('core-add');await revision(1);p=await snapshot();expect((p['mainTrack']['clips'] as List).length,2);final ids0=(p['mainTrack']['clips'] as List).map((c)=>c['id']).toList();expect(ids0.toSet().length,2);
   await legacy.invokeMethod('seek',{'us':3000000});await waitState((s)=>(s['position'] as int)>=2900000);
   await tapKey('core-trim-end');await revision(2);p=await snapshot();expect((p['mainTrack']['clips'][1]['outUs']),3000000);
