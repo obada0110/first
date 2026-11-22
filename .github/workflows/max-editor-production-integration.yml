@@ -59,7 +59,11 @@ jobs:
             exit 1
           fi
           cp build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/max-editor-legacy-debug.apk"
-          rg -q 'MAX_CORE_EDITOR_ENABLED = false' android/app/build/generated/source/buildConfig/debug/io/github/obada0110/maxeditor/BuildConfig.java
+          python3 - <<'PY'
+          from pathlib import Path
+          config = Path('android/app/build/generated/source/buildConfig/debug/io/github/obada0110/maxeditor/BuildConfig.java').read_text()
+          assert 'MAX_CORE_EDITOR_ENABLED = false' in config, config
+          PY
       - name: Build isolated core-enabled debug APK; release configuration remains disabled
         working-directory: max-motion/mobile
         env:
@@ -71,7 +75,11 @@ jobs:
             exit 1
           fi
           cp build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/MAX-EDITOR-Phase-3A-Core-Debug.apk"
-          rg -q 'MAX_CORE_EDITOR_ENABLED = true' android/app/build/generated/source/buildConfig/debug/io/github/obada0110/maxeditor/BuildConfig.java
+          python3 - <<'PY'
+          from pathlib import Path
+          config = Path('android/app/build/generated/source/buildConfig/debug/io/github/obada0110/maxeditor/BuildConfig.java').read_text()
+          assert 'MAX_CORE_EDITOR_ENABLED = true' in config, config
+          PY
       - name: Allow KVM for the isolated emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
