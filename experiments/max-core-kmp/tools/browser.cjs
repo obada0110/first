@@ -9,7 +9,7 @@ try{browser=await chromium.launch({executablePath:process.env.CHROME_BIN||'/usr/
  const productionOps=await p.evaluate(async({schema,project})=>{
   const {MaxSession}=await import('/max-core.mjs');const s=new MaxSession(schema,project),rows=[];
   function edit(op,fields={}){const before=JSON.parse(s.snapshot()),command={op,expectedRevision:before.revision,...fields};s.edit(JSON.stringify(command));const next=JSON.parse(s.snapshot());rows.push({op,revision:next.revision,clipIds:next.mainTrack.clips.map(c=>c.id),layerIds:next.layers.map(l=>l.id)});return next}
-  const first=JSON.parse(s.snapshot()).mainTrack.clips[1];edit('addClip',{clip:{...first,id:'newClip'}});edit('trimRight',{id:'newClip',atUs:7000000});edit('split',{id:'newClip',atUs:7000000,rightId:'splitClip'});let ids=JSON.parse(s.snapshot()).mainTrack.clips.map(c=>c.id).reverse();edit('orderClips',{ids});edit('undo');edit('redo');edit('delete',{id:'splitClip'});
+  const first=JSON.parse(s.snapshot()).mainTrack.clips[1];edit('addClip',{clip:{...first,id:'newClip'}});edit('trimRight',{id:'newClip',atUs:8000000});edit('split',{id:'newClip',atUs:7000000,rightId:'splitClip'});let ids=JSON.parse(s.snapshot()).mainTrack.clips.map(c=>c.id).reverse();edit('orderClips',{ids});edit('undo');edit('redo');edit('delete',{id:'splitClip'});
   const before=s.snapshot();let stale='';try{s.edit(JSON.stringify({op:'undo',expectedRevision:0}))}catch(e){stale=String(e)}
   if(before!==s.snapshot()||!stale)throw Error('stale/failure changed JS session');return {rows,staleRejected:true,unchangedAfterFailure:true,final:JSON.parse(s.snapshot())}
  },{schema,project:fs.readFileSync('proof/fixtures/project.json','utf8')});fs.writeFileSync(dir+'production-ops-js.json',JSON.stringify(productionOps,null,2));

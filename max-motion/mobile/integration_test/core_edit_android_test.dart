@@ -43,11 +43,11 @@ void main(){
    final current=await snapshot(),clips=current['mainTrack']['clips'] as List;final from=clips.last['id'] as String,to=clips.first['id'] as String;
    final source=find.byKey(ValueKey('core-clip-item-$from')),target=find.byKey(ValueKey('core-clip-item-$to'));
    await tester.ensureVisible(source);await tester.ensureVisible(target);final a=tester.getCenter(source),b=tester.getCenter(target);final sw=Stopwatch()..start();
-   await tester.dragFrom(a,b-a,duration:const Duration(milliseconds:350));await tester.pump(const Duration(milliseconds:500));
+   await tester.timedDragFrom(a,b-a,const Duration(milliseconds:350));await tester.pump(const Duration(milliseconds:500));
    await revision((current['revision'] as int)+1);sw.stop();dragTimes.add(sw.elapsedMicroseconds/1000);
    expect((await snapshot())['mainTrack']['clips'][0]['id'],from);
   }
-  var p=await snapshot();var persisted=await checkpoint();expect(persisted,p);expect(persisted['schemaVersion'],1);expect(persisted['projectId'],p['projectId']);expect((persisted['assets'] as List).map((a)=>a['id']).toList(),(p['assets'] as List).map((a)=>a['id']).toList());
+  p=await snapshot();var persisted=await checkpoint();expect(persisted,p);expect(persisted['schemaVersion'],1);expect(persisted['projectId'],p['projectId']);expect((persisted['assets'] as List).map((a)=>a['id']).toList(),(p['assets'] as List).map((a)=>a['id']).toList());
   final dragSorted=[...dragTimes]..sort();final uiPerf={'clipReorderDrags':dragTimes.length,'medianHarnessMs':dragSorted[dragSorted.length~/2],'maxHarnessMs':dragSorted.last,'revision':p['revision']};stdout.writeln('UI_DRAG ${jsonEncode(uiPerf)}');
   await binding.takeScreenshot('phase3a-after-seven-commands-and-drag');
   // RTL/LTR remain the existing app locale behavior while the production controls are mounted.

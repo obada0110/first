@@ -15,7 +15,7 @@ class ProjectLibrary extends StatelessWidget {
   });
   final String? name;
   final String range, status;
-  final VoidCallback? onImport, onResume;
+  final VoidCallback? onImport, onResume, onRelink;
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context), type = Theme.of(context).textTheme;
