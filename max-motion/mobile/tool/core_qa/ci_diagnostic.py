@@ -14,6 +14,8 @@ markers = re.compile(
 )
 selected: set[int] = set()
 for index, line in enumerate(lines):
+    if "DeprecationWarning" in line:
+        continue
     if markers.search(line):
         selected.update(range(max(0, index - 3), min(len(lines), index + 7)))
 if selected:

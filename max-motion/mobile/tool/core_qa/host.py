@@ -8,11 +8,11 @@ def pick(name):
     for _ in range(24):
         ns=legacy.nodes();docs=[n for n in ns if n.get('package','').endswith('documentsui')]
         match=next((n for n in docs if n.get('text')==name),None)
-        if match:legacy.tap(match);return
+        if match is not None:legacy.tap(match);return
         roots=next((n for n in docs if n.get('content-desc')=='Show roots'),None)
-        if roots:legacy.tap(roots);time.sleep(.3);continue
+        if roots is not None:legacy.tap(roots);time.sleep(.3);continue
         downloads=next((n for n in docs if n.get('text')=='Downloads'),None)
-        if downloads:legacy.tap(downloads);time.sleep(.3);continue
+        if downloads is not None:legacy.tap(downloads);time.sleep(.3);continue
         time.sleep(.25)
     raise AssertionError(('DocumentsUI file not found',name,[(n.get('text'),n.get('content-desc')) for n in ns]))
 class Handler(BaseHTTPRequestHandler):
