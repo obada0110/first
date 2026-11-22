@@ -13,6 +13,7 @@ import androidx.media3.ui.PlayerView
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.*
 import io.flutter.plugin.platform.*
+import io.github.obada0110.maxeditor.BuildConfig
 import io.github.obada0110.maxeditor.R
 import kotlinx.serialization.json.*
 import maxeditor.contract.*
@@ -49,7 +50,7 @@ class SingleChannel(private val a:Activity,e:FlutterEngine) {
                 } catch(ex:Exception) { a.runOnUiThread { result.error(ex.message?.takeIf { it in setOf("BAD_ORDER","CUT_MARGIN","TIME_RANGE","LAST_CLIP","UNDO_EMPTY","REDO_EMPTY","STALE_REVISION","REVISION_LIMIT","UNKNOWN_ID","DUPLICATE_ID") } ?: "EDIT_FAILED", ex.message, null) } } }
                 else -> result.notImplemented()
             }
-        }, e.dartExecutor.binaryMessenger.makeBackgroundTaskQueue())
+        })
         e.platformViewsController.registry.registerViewFactory("max_editor/preview",object:PlatformViewFactory(StandardMessageCodec.INSTANCE){override fun create(c:Context,id:Int,args:Any?):PlatformView {
             val view=LayoutInflater.from(c).inflate(R.layout.single_preview,null) as PlayerView;view.player=player
             // A paused READY player may retain decoder position while TextureView has a new surface after restore/rotation.
