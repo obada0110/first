@@ -36,13 +36,15 @@ class Session(private val validator:ProjectV1, initial:String, private val persi
     fun apply(c:JsonObject) {
         fun stringField(k:String) = c[k]?.jsonPrimitive?.isString == true
         require(stringField("op"));val op=c.s("op")
-        val args=when(op){"addClip"->setOf("clip");"split"->setOf("id","atUs","rightId");"trimLeft","trimRight","putKey","removeKey"->if(op=="putKey")setOf("id","atUs","value") else setOf("id","atUs");"trimRange"->setOf("id","fromUs","toUs");"delete"->setOf("id");"order"->setOf("ids");"orderClips"->setOf("ids");"undo","redo"->emptySet();else->throw IllegalArgumentException("UNKNOWN_OP")}
+        val args=when(op){"addClip"->setOf("clip");"addLayer"->setOf("layer");"split"->setOf("id","atUs","rightId");"trimLeft","trimRight","putKey","removeKey"->if(op=="putKey")setOf("id","atUs","value") else setOf("id","atUs");"trimRange"->setOf("id","fromUs","toUs");"delete"->setOf("id");"deleteLayer"->setOf("id");"order"->setOf("ids");"orderClips"->setOf("ids");"undo","redo"->emptySet();else->throw IllegalArgumentException("UNKNOWN_OP")}
         require(c.keys==args+setOf("op","expectedRevision"));for(k in listOf("expectedRevision","atUs","fromUs","toUs")) c[k]?.let {require(!it.jsonPrimitive.isString && it.jsonPrimitive.longOrNull!=null)}
         for(k in listOf("id","rightId")) if(k in args)require(stringField(k))
         val p=state; val rev=p.n("revision"); require(c.n("expectedRevision")==rev){"STALE_REVISION"};require(rev<9007199254740991L){"REVISION_LIMIT"}
         val clips=Clock.clips(p).toMutableList();val ls=layers(p).toMutableList()
         val candidate=when(op){
             "addClip" -> { val clip=c.getValue("clip").jsonObject; track(p,clips+clip) }
+            "addLayer" -> p.with("layers",JsonArray(ls+c.getValue("layer").jsonObject))
+            "deleteLayer" -> {val idx=ls.indexOfFirst{it.s("id")==c.s("id")};require(idx>=0){"UNKNOWN_ID"};ls.removeAt(idx);p.with("layers",JsonArray(ls))}
             "split","trimLeft","trimRight","trimRange","delete" -> {
                 val idx=clips.indexOfFirst{it.s("id")==c.s("id")};require(idx>=0){"UNKNOWN_ID"};val old=clips[idx]
                 if(op=="delete"){require(clips.size>1){"LAST_CLIP"};clips.removeAt(idx)} else if(op=="trimRange") {

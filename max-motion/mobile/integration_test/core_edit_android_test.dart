@@ -51,7 +51,10 @@ void main(){
    await revision((current['revision'] as int)+1);sw.stop();dragTimes.add(sw.elapsedMicroseconds/1000);
    expect((await snapshot())['mainTrack']['clips'][0]['id'],from);
   }
-  p=await snapshot();var persisted=await checkpoint();expect(persisted,p);expect(persisted['schemaVersion'],1);expect(persisted['projectId'],p['projectId']);expect((persisted['assets'] as List).map((a)=>a['id']).toList(),(p['assets'] as List).map((a)=>a['id']).toList());
+  p=await snapshot();final beforeTitle=p['revision'] as int;await tapKey('core-add-title');await tester.enterText(find.byKey(const ValueKey('core-title-input')),'Verified QA title');await tester.tap(find.byKey(const ValueKey('core-title-confirm')));await tester.pump();await revision(beforeTitle+1);p=await snapshot();final titleLayer=(p['layers'] as List).single as Map;final titleId=titleLayer['id'] as String;expect(titleLayer['text'],'Verified QA title');await waitKey('core-title-overlay-$titleId');expect(find.text('Verified QA title'),findsOneWidget);
+  await tapKey('core-delete-title');await revision(beforeTitle+2);expect(find.text('Verified QA title'),findsNothing);
+  await tapKey('core-undo');await revision(beforeTitle+3);p=await snapshot();expect((p['layers'] as List).single['text'],'Verified QA title');await waitKey('core-title-overlay-$titleId');
+  var persisted=await checkpoint();expect(persisted,p);expect(persisted['schemaVersion'],1);expect(persisted['projectId'],p['projectId']);expect((persisted['assets'] as List).map((a)=>a['id']).toList(),(p['assets'] as List).map((a)=>a['id']).toList());
   final dragSorted=[...dragTimes]..sort();final uiPerf={'clipReorderDrags':dragTimes.length,'medianHarnessMs':dragSorted[dragSorted.length~/2],'maxHarnessMs':dragSorted.last,'revision':p['revision']};stdout.writeln('UI_DRAG ${jsonEncode(uiPerf)}');
   await host('shot/phase3a-after-seven-commands-and-drag');
   // RTL/LTR remain the existing app locale behavior while the production controls are mounted.

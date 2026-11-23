@@ -29,6 +29,7 @@ class _SingleState extends State<SingleScreen> {
   bool coreEnabled = false, coreBusy = false;
   Map<String, dynamic>? projectCore;
   int selectedCoreClip = 0;
+  String? selectedCoreLayerId;
   String coreStatus = '';
   Map<dynamic, dynamic> data = {};
   final start = TextEditingController(), end = TextEditingController();
@@ -144,6 +145,32 @@ class _SingleState extends State<SingleScreen> {
     final track=projectCore?['mainTrack'];
     if(track is! Map || track['clips'] is! List) return const [];
     return (track['clips'] as List).cast<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
+  }
+
+  List<Map<String,dynamic>> get coreTextLayers {
+    final layers=projectCore?['layers'];
+    if(layers is! List)return const [];
+    return layers.cast<Map>().map((e)=>Map<String,dynamic>.from(e)).where((e)=>e['kind']=='text').toList();
+  }
+
+  Future<void> addCoreTitle() async {
+    if(!coreEnabled || projectCore==null || coreClips.isEmpty)return;
+    final t=AppLocalizations.of(context),controller=TextEditingController();
+    final text=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
+      title:Text(t.coreAddTitle),content:TextField(key:const ValueKey('core-title-input'),controller:controller,autofocus:true,maxLength:400,decoration:InputDecoration(hintText:t.coreTitleHint)),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(t.cancel)),FilledButton(key:const ValueKey('core-title-confirm'),onPressed:()=>Navigator.pop(ctx,controller.text.trim()),child:Text(t.coreTitleSave))],
+    ));
+    controller.dispose();if(text==null||text.isEmpty||!mounted)return;
+    final clips=coreClips,index=selectedCoreClip.clamp(0,coreClips.length-1).toInt();
+    final sequenceStart=clips.take(index).fold<int>(0,(sum,c)=>sum+(c['outUs'] as int)-(c['inUs'] as int));
+    final sourceAt=(data['position'] as int?) ?? (clips[index]['inUs'] as int);
+    final duration=clips.fold<int>(0,(sum,c)=>sum+(c['outUs'] as int)-(c['inUs'] as int));
+    final start=(sequenceStart+(sourceAt-(clips[index]['inUs'] as int))).clamp(0,(duration-1).clamp(0,86400000000)).toInt();
+    final remaining=(duration-start).clamp(1,86400000000-start).toInt();
+    final id=newProjectId();
+    final layer=<String,dynamic>{'id':id,'startUs':start,'durationUs':remaining,'kind':'text','text':text,'font':'bold','color':'#FFFFFF','effect':'outline','transform':{'base':{'x':50,'y':50,'w':80,'h':20,'angle':0,'opacity':100,'cropX':0,'cropY':0},'keys':<dynamic>[]}};
+    await coreEdit('addLayer',{'layer':layer});
+    if(mounted)setState(()=>selectedCoreLayerId=id);
   }
 
   Future<void> refreshProjectCore() async {
@@ -535,7 +562,83 @@ class _SingleState extends State<SingleScreen> {
         ],
       ),
     );
-    Widget monitor() => const SourceMonitor(key: ValueKey('monitor'));
+    Widget monitor() {
+      final clips = coreClips;
+      var timelineUs = 0;
+      if (clips.isNotEmpty) {
+        final i = selectedCoreClip.clamp(0, clips.length - 1).toInt();
+        final clip = clips[i];
+        final sourceUs = (data['position'] as int?) ?? (clip['inUs'] as int);
+        timelineUs = clips.take(i).fold<int>(
+              0,
+              (sum, c) => sum + (c['outUs'] as int) - (c['inUs'] as int),
+            ) +
+            sourceUs - (clip['inUs'] as int);
+      }
+      final active = coreEnabled
+          ? coreTextLayers.where((layer) {
+              final start = layer['startUs'] as int;
+              final duration = layer['durationUs'] as int;
+              return timelineUs >= start && timelineUs < start + duration;
+            }).toList()
+          : const <Map<String, dynamic>>[];
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          const SourceMonitor(key: ValueKey('monitor')),
+          for (final layer in active)
+            Builder(
+              builder: (context) {
+                final pose = (layer['transform'] as Map)['base'] as Map;
+                final color = Color(
+                  0xFF000000 |
+                      int.parse((layer['color'] as String).substring(1), radix: 16),
+                );
+                final effect = layer['effect'] as String;
+                final shadows = effect == 'outline'
+                    ? const [
+                        Shadow(color: Colors.black, offset: Offset(-1, -1), blurRadius: 1),
+                        Shadow(color: Colors.black, offset: Offset(1, -1), blurRadius: 1),
+                        Shadow(color: Colors.black, offset: Offset(-1, 1), blurRadius: 1),
+                        Shadow(color: Colors.black, offset: Offset(1, 1), blurRadius: 1),
+                      ]
+                    : effect == 'shadow'
+                        ? const [Shadow(color: Colors.black87, offset: Offset(2, 2), blurRadius: 3)]
+                        : const <Shadow>[];
+                final x = ((pose['x'] as num).toDouble() - 50) / 50;
+                final y = ((pose['y'] as num).toDouble() - 50) / 50;
+                final width = ((pose['w'] as num).toDouble() / 100).clamp(.05, 1).toDouble();
+                final height = ((pose['h'] as num).toDouble() / 100).clamp(.05, 1).toDouble();
+                return Positioned.fill(
+                  child: Align(
+                    alignment: Alignment(x, y),
+                    child: FractionallySizedBox(
+                      widthFactor: width,
+                      heightFactor: height,
+                      child: GestureDetector(
+                        onTap: () => setState(() => selectedCoreLayerId = layer['id'] as String),
+                        child: Center(
+                          child: Text(
+                            layer['text'] as String,
+                            key: ValueKey('core-title-overlay-${layer['id']}'),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: layer['font'] == 'bold' ? FontWeight.bold : FontWeight.normal,
+                              fontFamily: layer['font'] == 'serif' ? 'serif' : null,
+                              shadows: shadows,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+      );
+    }
     Widget transport() => Row(
       children: [
         IconButton(
@@ -579,6 +682,8 @@ class _SingleState extends State<SingleScreen> {
         )),
         Wrap(spacing:4,runSpacing:0,children:[
           TextButton(key:const ValueKey('core-add'),onPressed:coreBusy?null:()=>coreEdit('addClip'),child:Text(t.coreAdd)),
+          TextButton(key:const ValueKey('core-add-title'),onPressed:coreBusy?null:addCoreTitle,child:Text(t.coreAddTitle)),
+          if(selectedCoreLayerId!=null&&coreTextLayers.any((layer)=>layer['id']==selectedCoreLayerId))TextButton(key:const ValueKey('core-delete-title'),onPressed:coreBusy?null:(){final id=selectedCoreLayerId!;coreEdit('deleteLayer',{'id':id}).then((_){if(mounted)setState(()=>selectedCoreLayerId=null);});},child:Text(t.coreDeleteTitle)),
           TextButton(key:const ValueKey('core-trim-end'),onPressed:coreBusy||!canCut?null:()=>coreEdit('trimRight'),child:Text(t.coreTrimEnd)),
           TextButton(key:const ValueKey('core-split'),onPressed:coreBusy||!canCut?null:()=>coreEdit('split'),child:Text(t.coreSplit)),
           TextButton(key:const ValueKey('core-delete'),onPressed:coreBusy||clips.length<2?null:()=>coreEdit('delete'),child:Text(t.coreDelete)),
