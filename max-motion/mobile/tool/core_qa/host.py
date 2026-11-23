@@ -44,8 +44,10 @@ class Handler(BaseHTTPRequestHandler):
    elif name.startswith('frame-'):
     shot=out/(name+'.png');shot.write_bytes(adb('exec-out','screencap','-p'))
     # Match the validated preview probe used by the production-screen QA suite.
-    raw=sp.check_output(['ffmpeg','-v','error','-i',str(shot),'-vf','crop=64:64:(iw-64)/2:ih*0.21','-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','-threads','1','pipe:1'])
-    pixels=list(zip(raw[::3],raw[1::3],raw[2::3]));row={'sample':name,'saturated':sum(max(p)-min(p)>50 for p in pixels),'nearBlack':sum(max(p)<12 for p in pixels),'pixels':len(pixels)};metrics.append(row);(out/'frame-observations.json').write_text(json.dumps(metrics,indent=2));data=json.dumps(row).encode()
+    w=max(64,int(body['w']));h=max(64,int(body['h']));x=int(body['x'])+(w-64)//2;y=int(body['y'])+(h-64)//2
+    crop=f'crop=64:64:{x}:{y}'
+    raw=sp.check_output(['ffmpeg','-v','error','-i',str(shot),'-vf',crop,'-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','-threads','1','pipe:1'])
+    pixels=list(zip(raw[::3],raw[1::3],raw[2::3]));row={'sample':name,'saturated':sum(max(p)-min(p)>50 for p in pixels),'nearBlack':sum(max(p)<12 for p in pixels),'nearWhite':sum(min(p)>220 for p in pixels),'pixels':len(pixels)};metrics.append(row);(out/'frame-observations.json').write_text(json.dumps(metrics,indent=2));data=json.dumps(row).encode()
    else:raise ValueError(self.path)
    self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(data)
   except Exception as e:
