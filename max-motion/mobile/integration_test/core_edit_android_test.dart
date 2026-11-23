@@ -68,6 +68,7 @@ void main(){
   await expectLater(core.invokeMethod('edit',jsonEncode({'op':'undo','expectedRevision':p['revision']-1})),throwsA(isA<PlatformException>()));expect(await checkpoint(),persisted);
   // Reopening the session establishes a fresh, deliberately non-portable undo boundary.
   await expectLater(core.invokeMethod('edit',jsonEncode({'op':'undo','expectedRevision':p['revision']})),throwsA(isA<PlatformException>()));expect(await snapshot(),persisted);
+  final saved=await post('checkpoint-save',Map<String,dynamic>.from(persisted));expect(saved['ok'],true);
   final c=HttpClient();try{final r=await(await c.getUrl(Uri.parse('http://127.0.0.1:8765/shot/phase3a-after-commands-and-stress'))).close();expect(r.statusCode,200);await r.drain<void>();}finally{c.close();}
  },timeout:const Timeout(Duration(minutes:5)));
 }

@@ -18,6 +18,12 @@ if ! flutter test --no-pub integration_test/core_edit_android_test.dart -d emula
   publish_failure_summary
   exit 1
 fi
+# flutter test's Android runner removes its temporary target package on teardown. Reinstall the same isolated debug APK and restore the exact v1 checkpoint captured from the app before exercising real cold-start and SAF repair.
+app=io.github.obada0110.maxeditor.phase3a
+[[ -s "$QA/evidence/project-v1.json" ]]
+adb install -r "$RUNNER_TEMP/MAX-EDITOR-Phase-3A-Core-Debug.apk" >/dev/null
+adb shell run-as "$app" sh -c 'cat > files/single-v1.json' < "$QA/evidence/project-v1.json"
+adb exec-out run-as "$app" cat files/single-v1.json | cmp - "$QA/evidence/project-v1.json"
 if ! python3 tool/core_qa/cold.py 2>&1 | tee "$QA/evidence/cold-reopen.log"; then
   { printf '\n=== cold reopen ===\n'; cat "$QA/evidence/cold-reopen.log"; printf '\n=== QA bridge ===\n'; cat "$QA/evidence/host.log"; printf '\n=== relevant Android logcat ===\n'; adb logcat -d -t 1200 | grep -E 'FATAL EXCEPTION|AndroidRuntime|MaxVideo|E/flutter|Exception|Caused by' | tail -60; } > "$QA/evidence/failure.log" 2>&1 || true
   python3 tool/core_qa/ci_diagnostic.py "$QA/evidence/failure.log" "Android cold-reopen and relink"
