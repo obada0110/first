@@ -5,7 +5,10 @@ app='io.github.obada0110.maxeditor.phase3a'
 def adb(*a):return sp.check_output(['adb',*a],timeout=35)
 def launch():sp.run(['adb','shell','monkey','-p',app,'1'],check=True,stdout=sp.DEVNULL);time.sleep(5)
 def stop():sp.run(['adb','shell','am','force-stop',app],check=True)
-def snapshot():return json.loads(adb('exec-out','run-as',app,'cat','files/single-v1.json'))
+def snapshot():
+ raw=adb('exec-out','run-as',app,'cat','files/single-v1.json')
+ try:return json.loads(raw)
+ except json.JSONDecodeError as exc:raise AssertionError(f'Invalid durable v1 checkpoint: bytes={len(raw)} prefix={raw[:240]!r}; adb output must be a Project Contract v1 JSON object') from exc
 def ui():
  sp.run(['adb','shell','uiautomator','dump','--compressed','/sdcard/core-ui.xml'],stdout=sp.DEVNULL,stderr=sp.DEVNULL)
  return adb('shell','cat','/sdcard/core-ui.xml').decode(errors='replace')

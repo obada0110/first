@@ -1,5 +1,5 @@
 """QA-only DocumentsUI picker, source-frame sampler and checkpoint bridge for emulator tests."""
-import os,sys,time,threading,json,subprocess as sp,urllib.parse,re
+import os,sys,time,threading,json,subprocess as sp,urllib.parse,re,traceback
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 qa=Path(os.environ['QA']);out=qa/'evidence';out.mkdir(parents=True,exist_ok=True);app='io.github.obada0110.maxeditor.phase3a';sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'single_qa'));import host as legacy
@@ -33,7 +33,9 @@ class Handler(BaseHTTPRequestHandler):
     adb('shell','settings','put','system','accelerometer_rotation','0');adb('shell','settings','put','system','user_rotation','0' if name=='portrait' else '1');data=b'rotated'
    else:raise ValueError(self.path)
    self.send_response(200);self.send_header('Content-Type','application/json' if op in ('checkpoint','memory') else 'text/plain');self.end_headers();self.wfile.write(data)
-  except Exception as e:self.send_error(500,str(e))
+  except Exception as e:
+   print(f'GET {self.path} failed: {type(e).__name__}: {e}',file=sys.stderr,flush=True);traceback.print_exc()
+   self.send_error(500,str(e))
  def do_POST(self):
   try:
    body=json.loads(self.rfile.read(int(self.headers['Content-Length'])));name=urllib.parse.urlparse(self.path).path.strip('/').split('/')[-1]
@@ -45,5 +47,7 @@ class Handler(BaseHTTPRequestHandler):
     pixels=list(zip(raw[::3],raw[1::3],raw[2::3]));row={'sample':name,'saturated':sum(max(p)-min(p)>50 for p in pixels),'nearBlack':sum(max(p)<12 for p in pixels),'pixels':len(pixels)};metrics.append(row);(out/'frame-observations.json').write_text(json.dumps(metrics,indent=2));data=json.dumps(row).encode()
    else:raise ValueError(self.path)
    self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(data)
-  except Exception as e:self.send_error(500,str(e))
+  except Exception as e:
+   print(f'POST {self.path} failed: {type(e).__name__}: {e}',file=sys.stderr,flush=True);traceback.print_exc()
+   self.send_error(500,str(e))
 if __name__=='__main__':ThreadingHTTPServer(('127.0.0.1',8765),Handler).serve_forever()
