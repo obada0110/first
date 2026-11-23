@@ -158,7 +158,7 @@ class _SingleState extends State<SingleScreen> {
     final t=AppLocalizations.of(context),controller=TextEditingController();
     final text=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
       title:Text(t.coreAddTitle),content:TextField(key:const ValueKey('core-title-input'),controller:controller,autofocus:true,maxLength:400,decoration:InputDecoration(hintText:t.coreTitleHint)),
-      actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(t.cancel)),FilledButton(key:const ValueKey('core-title-confirm'),onPressed:()=>Navigator.pop(ctx,controller.text.trim()),child:Text(t.coreTitleSave))],
+      actions:[TextButton(onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx);},child:Text(t.cancel)),FilledButton(key:const ValueKey('core-title-confirm'),onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx,controller.text.trim());},child:Text(t.coreTitleSave))],
     ));
     controller.dispose();if(text==null||text.isEmpty||!mounted)return;
     final clips=coreClips,index=selectedCoreClip.clamp(0,coreClips.length-1).toInt();
