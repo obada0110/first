@@ -161,12 +161,10 @@ class _SingleState extends State<SingleScreen> {
       actions:[TextButton(onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx);},child:Text(t.cancel)),FilledButton(key:const ValueKey('core-title-confirm'),onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx,controller.text.trim());},child:Text(t.coreTitleSave))],
     ));
     controller.dispose();if(text==null||text.isEmpty||!mounted)return;
-    final clips=coreClips,index=selectedCoreClip.clamp(0,coreClips.length-1).toInt();
-    final sequenceStart=clips.take(index).fold<int>(0,(sum,c)=>sum+(c['outUs'] as int)-(c['inUs'] as int));
-    final sourceAt=(data['position'] as int?) ?? (clips[index]['inUs'] as int);
+    final clips=coreClips;
     final duration=clips.fold<int>(0,(sum,c)=>sum+(c['outUs'] as int)-(c['inUs'] as int));
-    final start=(sequenceStart+(sourceAt-(clips[index]['inUs'] as int))).clamp(0,(duration-1).clamp(0,86400000000)).toInt();
-    final remaining=(duration-start).clamp(1,86400000000-start).toInt();
+    const start=0;
+    final remaining=duration.clamp(1,86400000000).toInt();
     final id=newProjectId();
     final layer=<String,dynamic>{'id':id,'startUs':start,'durationUs':remaining,'kind':'text','text':text,'font':'bold','color':'#FFFFFF','effect':'outline','transform':{'base':{'x':50,'y':50,'w':80,'h':20,'angle':0,'opacity':100,'cropX':0,'cropY':0},'keys':<dynamic>[]}};
     await coreEdit('addLayer',{'layer':layer});
