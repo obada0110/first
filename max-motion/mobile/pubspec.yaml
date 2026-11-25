@@ -1,0 +1,35 @@
+name: max_editor
+description: MAX EDITOR single-source Android editor.
+publish_to: none
+version: 0.3.0+3
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+  flutter: '>=3.38.3'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/brand/mark.png
+    - assets/brand/icons/
+    - assets/fonts/OFL.txt
+  fonts:
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Tajawal-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Tajawal-Bold.ttf
+          weight: 700

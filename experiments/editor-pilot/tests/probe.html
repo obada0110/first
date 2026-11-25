@@ -1,0 +1,3 @@
+<!doctype html><meta charset="utf-8"><iframe src="fixture.html" style="width:100%;height:95vh"></iframe><script type="module">
+import {exercise} from './browser-suite.mjs';window.runFixture=received=>exercise(document.querySelector('iframe'),received);if(!location.search)try{const result=await window.runFixture();await fetch('/result/webview',{method:'POST',body:JSON.stringify(result)})}catch(e){await fetch('/result/webview',{method:'POST',body:JSON.stringify({error:String(e),ua:navigator.userAgent})})}
+</script>

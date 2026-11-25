@@ -1,0 +1,626 @@
+/* Inspector and stage share one playhead at all viewport sizes. */
+.app {
+  --bench: #181c26;
+  --inspector: #202532;
+  --edge: #343b48;
+  --hint: #aab4c4;
+  max-width: 1900px;
+  background: #141820;
+}
+.app .topbar {
+  background: #191e28;
+  border-bottom: 1px solid var(--edge);
+}
+.app .viewer {
+  background: radial-gradient(ellipse at center, #222632, #11151d 80%);
+}
+.app .transport,
+.app .desk {
+  background: var(--bench);
+  border-color: var(--edge);
+}
+.app .toolscroll,
+.app .drawer,
+.app .drawerTop {
+  background: var(--inspector);
+  border-color: var(--edge);
+}
+.app .desk .add {
+  background: var(--mint);
+  border-radius: 50%;
+}
+.app .timeLayer .text {
+  background: #deb678;
+  color: #241e16;
+}
+.app .timeLayer:nth-child(even) .text {
+  background: #ae9bcf;
+  color: #211b2b;
+}
+.app .timeLayer .overlay {
+  background: #77c9be;
+  color: #122521;
+}
+.app .timeLayer .chosen {
+  box-shadow: inset 0 0 0 2px #f4f6ec;
+  color: #151b20;
+}
+.app .timeLayer {
+  height: 27px;
+  border-radius: 5px;
+  background: #232935;
+}
+.app .timeLayer button {
+  font-weight: 600;
+  outline-offset: -2px;
+  padding-left: 8px;
+}
+.keyDot {
+  position: absolute;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  transform: translateX(-50%) rotate(45deg);
+  background: #fff9ed;
+  box-shadow: 0 0 0 1px #463d4377;
+  pointer-events: none;
+}
+.app #layerRows {
+  position: relative;
+  max-height: 15vh;
+}
+.app #layerRows:after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--row-head, -4px);
+  width: 1.5px;
+  background: #f5f2df;
+}
+.app .lane {
+  background: #1a1e27;
+}
+.app .desk .trackhead {
+  padding-bottom: 4px;
+}
+.app .drawer .hint,
+.app .dim {
+  color: var(--hint);
+}
+#idleInspector {
+  display: none;
+}
+.layerBadge {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #292f3e;
+  border: 1px solid #394254;
+  border-radius: 8px;
+  padding: 5px 10px;
+  color: var(--mint);
+}
+.layerBadge select {
+  border: 0;
+  background: transparent;
+  color: #dce3ea;
+  flex: 1;
+  max-width: 100%;
+  font-family: inherit;
+}
+.layerBadge option {
+  background: #202532;
+}
+.motionTabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 12px 0 8px;
+  gap: 3px;
+  background: #181c26;
+  padding: 4px;
+  border-radius: 8px;
+}
+.motionTabs button {
+  font-size: 11px;
+  color: #aab5bc;
+  padding: 5px 1px;
+  border-radius: 5px;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+.motionTabs button .i {
+  width: 15px;
+  height: 15px;
+}
+.motionTabs button[aria-pressed="true"] {
+  background: #29463e;
+  color: var(--mint);
+}
+#motionFields {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+#motionFields label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 11px;
+  background: #191e28;
+  border: 1px solid #374150;
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: #aab6bf;
+}
+#motionFields input {
+  width: 60%;
+  text-align: left;
+  direction: ltr;
+  border: 0;
+  background: transparent;
+  color: var(--mint);
+  font: 13px var(--mono);
+  padding-inline: 0;
+}
+#gesturePad {
+  min-height: 93px;
+  height: clamp(90px, 16vh, 164px);
+  touch-action: none;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  border: 1px solid #465064;
+  border-radius: 9px;
+  background:
+    radial-gradient(circle, #58607166 1px, transparent 1.2px) 0/13px 13px,
+    #292f3d;
+  color: #b8c3cd;
+  user-select: none;
+  cursor: grab;
+}
+#gesturePad.dragging {
+  cursor: grabbing;
+  border-color: var(--mint);
+}
+.padTarget {
+  display: grid;
+  place-items: center;
+  border: 1px solid #749a90;
+  border-radius: 50%;
+  background: #243c37;
+  color: #83dcba;
+  width: 34px;
+  height: 34px;
+}
+#padHint {
+  font-size: 12px;
+  font-weight: 500;
+}
+.keyHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 7px;
+}
+.keyHead b {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+}
+.keyHead svg {
+  color: var(--mint);
+  width: 14px;
+}
+.keyHead small,
+.keyTip {
+  color: #a8b2bf;
+  font-size: 11px;
+}
+.keyActions {
+  display: flex;
+  gap: 5px;
+}
+.keyActions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 6px;
+  background: #303746;
+  min-width: 34px;
+  min-height: 34px;
+}
+.keyActions svg {
+  width: 14px;
+}
+#putKey {
+  flex: 1;
+  color: var(--mint);
+  background: #29453e;
+}
+.keyRemove {
+  color: #c5cdd6;
+  font-size: 11px;
+  margin-top: 5px;
+}
+.keyTip {
+  line-height: 1.6;
+  margin: 7px 0;
+}
+.app .drawerTop {
+  padding-bottom: 5px;
+}
+.app .tool[aria-expanded="true"] {
+  background: #28463f;
+  color: var(--mint);
+}
+.app .desk.expanded #layerRows {
+  max-height: 20vh;
+}
+#effectsGallery {
+  width: min(580px, 95vw);
+  background: #202532;
+}
+#effectsGallery small,
+#idleInspector small {
+  color: var(--mint);
+}
+#galleryCards,
+#propertyTiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+#galleryCards button,
+#propertyTiles button {
+  background: #2b3241;
+  text-align: start;
+  border: 1px solid #40495b;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 0;
+}
+#galleryCards canvas {
+  width: 100%;
+  display: block;
+}
+#galleryCards strong {
+  display: block;
+  padding: 5px 7px;
+  font-size: 12px;
+}
+#propertyTiles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+#propertyTiles button {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding: 13px 3px;
+  gap: 6px;
+  font-size: 12px;
+}
+#propertyTiles svg {
+  color: #a5cdbe;
+}
+@media (min-width: 760px), (orientation: landscape) and (min-width: 620px) {
+  .app .workspace {
+    display: grid;
+    direction: ltr;
+    grid-template-columns: minmax(0, 1fr) clamp(226px, 24vw, 355px) 70px;
+    grid-template-rows: minmax(0, 1fr) 44px auto;
+    grid-template-areas: "viewer inspector tools" "transport inspector tools" "timeline inspector tools";
+  }
+  .app .viewer {
+    grid-area: viewer;
+    padding: 27px 24px 12px;
+  }
+  .app .transport {
+    grid-area: transport;
+    padding-inline: 14px;
+  }
+  .app .desk {
+    grid-area: timeline;
+    direction: rtl;
+    padding: 9px 14px 11px;
+    min-height: clamp(158px, 28dvh, 245px);
+  }
+  .app .desk.expanded {
+    min-height: 37dvh;
+  }
+  .app .desk .lane canvas {
+    height: 66px;
+  }
+  .app .desk.expanded .lane canvas {
+    height: 80px;
+  }
+  .app .toolscroll {
+    grid-area: tools;
+    direction: rtl;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 6px 4px;
+    overflow: auto;
+    border-left: 1px solid var(--edge);
+  }
+  .app .toolscroll .tool {
+    min-width: 0;
+    min-height: 48px;
+    width: 100%;
+    font-size: 10px;
+    flex: none;
+  }
+  .app .toolscroll #allTools {
+    order: 1;
+  }
+  .app .drawer,
+  #idleInspector {
+    grid-area: inspector;
+    direction: rtl;
+    border-left: 1px solid var(--edge);
+    max-height: none;
+    margin: 0;
+    padding: 13px;
+    overflow: auto;
+  }
+  .app .drawerTop {
+    top: -13px;
+  }
+  .app .drawer .fxparams {
+    grid-template-columns: 1fr;
+  }
+  .app .drawer .controlGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #idleInspector {
+    display: block;
+    background: var(--inspector);
+  }
+  #idleInspector h2 {
+    margin: 3px 0 0;
+    font-size: 20px;
+  }
+  #idleInspector p {
+    font-size: 12px;
+    color: #acb6c1;
+    margin: 4px 0 15px;
+  }
+  .workspace:has(.drawer:not([hidden])) #idleInspector {
+    display: none;
+  }
+}
+@media (max-width: 759px) and (orientation: portrait) {
+  .app .workspace {
+    display: flex;
+    flex-direction: column;
+  }
+  .app .viewer {
+    order: 0;
+    padding: 10px 0;
+  }
+  .app .transport {
+    order: 1;
+  }
+  .app .desk {
+    order: 2;
+    min-height: 148px;
+    padding-bottom: 4px;
+  }
+  .app .desk.expanded {
+    min-height: 25dvh;
+  }
+  .app .desk .lane canvas {
+    height: 62px;
+  }
+  .app .desk.expanded .lane canvas {
+    height: 78px;
+  }
+  .app .toolscroll {
+    order: 3;
+    justify-content: flex-start;
+    border-block: 1px solid var(--edge);
+    padding: 4px 6px;
+  }
+  .app .drawer {
+    order: 4;
+    max-height: 32dvh;
+    padding-inline: 12px;
+  }
+  .app .toolscroll .tool {
+    min-width: 54px;
+    min-height: 42px;
+  }
+  .app .drawer .motionTabs {
+    margin: 5px 0;
+  }
+  .app .drawer #gesturePad {
+    min-height: 57px;
+    height: 65px;
+  }
+  .app .drawer #gesturePad .padTarget {
+    width: 23px;
+    height: 23px;
+  }
+  .keyHead {
+    margin-top: 8px;
+  }
+  .app .timeLayer {
+    height: 22px;
+  }
+  .app .timefoot {
+    margin-top: 2px;
+  }
+  .app .drawerTop {
+    top: -8px;
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .app .topbar {
+    padding-block: 3px;
+  }
+  .app .desk,
+  .app .desk.expanded {
+    min-height: 100px;
+    padding-block: 2px;
+  }
+  .app .desk .lane canvas,
+  .app .desk.expanded .lane canvas {
+    height: 47px;
+  }
+  .app .viewer {
+    padding: 3px;
+  }
+  .app .workspace {
+    grid-template-rows: minmax(0, 1fr) 34px auto;
+  }
+  .app .timeLayer {
+    height: 18px;
+  }
+  .app #layerRows {
+    max-height: 45px;
+  }
+  .app .timefoot {
+    display: none;
+  }
+  .app .toolscroll .tool {
+    min-height: 40px;
+  }
+}
+.app .editorHome .benchBrand {
+  display: inline-flex;
+  align-items: center;
+  max-width: none;
+  color: #e5f4ed;
+  gap: 6px;
+  white-space: nowrap;
+  font: 800 12px system-ui;
+  letter-spacing: -0.35px;
+  padding-inline-end: 12px;
+  border-inline-end: 1px solid var(--edge);
+  margin-inline-end: 5px;
+}
+.benchBrand i {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  letter-spacing: -1px;
+  background: var(--mint);
+  color: #163529;
+  font: italic 900 16px system-ui;
+}
+.app .topbar .export {
+  border-radius: 8px;
+}
+.app .layerBadge .i {
+  width: 17px;
+}
+.shapeHead,
+.shapeHead label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+}
+.shapeHead input {
+  width: 40px;
+  height: 25px;
+  border: 0;
+  padding: 0;
+  background: none;
+}
+#addMenu {
+  background: #202532;
+}
+#addMenu small {
+  color: var(--mint);
+}
+#shapeChoices,
+#addChoices {
+  display: grid;
+  gap: 6px;
+}
+#addChoices {
+  grid-template-columns: repeat(3, 1fr);
+  margin: 14px 0;
+}
+#shapeChoices {
+  grid-template-columns: repeat(4, 1fr);
+}
+#shapeChoices button,
+#addChoices button {
+  border: 1px solid #394252;
+  background: #2a3140;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+#addChoices svg {
+  color: var(--mint);
+}
+#shapeChoices canvas {
+  width: 32px;
+  height: 32px;
+}
+@media (max-width: 520px) {
+  .app .editorHome .benchBrand {
+    font-size: 0;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    margin: 0;
+  }
+  .app .editorHome {
+    gap: 1px;
+  }
+  .app .editorHome .iconBtn {
+    min-width: 30px;
+  }
+  .app .topbar {
+    padding-inline: 9px;
+  }
+  .app .drawer:has(#motionControls:not([hidden])) {
+    max-height: 34dvh;
+  }
+  .motionTabs button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+  }
+  .keyTip {
+    display: none;
+  }
+  #gesturePad .padTarget {
+    border: 0;
+  }
+  .app .drawer #gesturePad {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    min-height: 52px;
+  }
+  .app .drawer .layerBadge {
+    padding-block: 2px;
+  }
+  .app .drawer .keyHead {
+    margin-top: 4px;
+  }
+  .app .drawer .keyHead b {
+    font-size: 11px;
+  }
+}

@@ -1,0 +1,53 @@
+name: Package verified Android identity build
+on:
+  push:
+    branches: ['arena/bff96530-first']
+    paths: ['.github/workflows/max-editor-identity-delivery.yml', 'deliveries/android-identity-020/**']
+permissions:
+  actions: read
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN: '44911084624'
+      SRC: '1bddaaadbe87612c05080c468864a3fea595b4ed'
+      APK_SHA: '2eec42d8c022ddda1d2c4ef1272173257594307953bd05594a40320e38d14d1a'
+      ZIP: MAX-EDITOR-Android-0.2.0-build2.zip
+    steps:
+      - uses: actions/checkout@v5
+      - name: Collect the normal APK and evidence from the same successful run
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="$RUNNER_TEMP/MAX-EDITOR"
+          test "$(gh api repos/$GITHUB_REPOSITORY/actions/runs/$RUN --jq '[.head_sha,.conclusion]|join(" ")')" = "$SRC success"
+          git fetch --depth=1 origin "$SRC"
+          mkdir -p "$d"/{source,apk,evidence/contract,design-assets}
+          git archive "$SRC" max-motion/mobile max-motion/contract .github/workflows/max-editor-foundation.yml | tar -x -C "$d/source"
+          cp -r deliveries/android-identity-020/. "$d/"
+          mv "$d/before" "$d/earlier-failures" "$d/evidence/"
+          cp -r design/max-editor/brand-product-v1/assets/{icons.svg,symbols-source.json,tokens.json,logo} "$d/design-assets/"
+          gh run download "$RUN" -n max-editor-single-debug -D "$RUNNER_TEMP/binary"
+          cp "$(find "$RUNNER_TEMP/binary" -type f -name app-debug.apk)" "$d/apk/MAX-EDITOR.apk"
+          cp "$(find "$RUNNER_TEMP/binary" -type f -name pubspec.lock)" "$d/source/max-motion/mobile/"
+          gh run download "$RUN" -n single-source-evidence -D "$RUNNER_TEMP/qa"
+          cp -r "$RUNNER_TEMP/qa/evidence/." "$d/evidence/"
+          cp -r "$RUNNER_TEMP/qa/fixtures" "$d/evidence/"
+          gh run download "$RUN" -n project-contract-android-results -D "$d/evidence/contract"
+          cd "$d"; test "$(jq -r .apkSha256 evidence/identity.json)" = "$APK_SHA"
+          echo "$APK_SHA  apk/MAX-EDITOR.apk" | sha256sum -c -; unzip -tqq apk/MAX-EDITOR.apk
+          for f in evidence/{identity.json,cold.json,flutter-tests.log,empty-first.png,empty-reopened.png,workspace-landscape.png,restored.png,land-output.png,tall-output.png,fixtures/mx-land.mp4,mx-land.mp4-clip.mp4,mx-tall.mp4-clip.mp4} Android-Identity-AR.pdf source/max-motion/{contract/schema/project-v1.json,mobile/android/gradle/wrapper/gradle-wrapper.jar,mobile/pubspec.lock}; do test -s "$f"; done
+          printf 'Build: 0.2.0+2 (universal debug APK)\nTested revision: %s\nRun: %s\nAPK bytes: %s\nAPK SHA-256: %s\n' "$SRC" "$RUN" "$(stat -c %s apk/MAX-EDITOR.apk)" "$APK_SHA" > BUILD.txt
+          find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          cd ..; zip -qr "$ZIP" MAX-EDITOR
+          unzip -tqq "$ZIP"; mkdir checked; cd checked; unzip -q "../$ZIP"; cd MAX-EDITOR; sha256sum -c --quiet SHA256SUMS.txt
+      - name: Publish and compare the downloaded archive
+        run: |
+          set -eu
+          tag="android-identity-$GITHUB_RUN_ID"
+          gh release create "$tag" "$RUNNER_TEMP/$ZIP" --target "$GITHUB_SHA" --prerelease --title 'MAX EDITOR · Android 0.2.0 (2)' --notes 'حزمة تنفيذ الهوية: التطبيق المختبر، المصدر، التقرير العربي وأدلة التحقق.'
+          gh release download "$tag" -p "$ZIP" -D "$RUNNER_TEMP/published"
+          cmp "$RUNNER_TEMP/$ZIP" "$RUNNER_TEMP/published/$ZIP"

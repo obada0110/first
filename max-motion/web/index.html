@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0d1014" />
+    <title>MAX EDITOR · استوديو المونتاج</title>
+    <link rel="stylesheet" href="studio.css?v=07" />
+    <link rel="stylesheet" href="interface/dashboard.css?v=07" />
+    <link rel="stylesheet" href="interface/workbench.css?v=07" />
+  </head>
+  <body>
+    <svg class="symbols" aria-hidden="true">
+      <defs>
+        <symbol id="i-export" viewBox="0 0 24 24">
+          <path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5" />
+        </symbol>
+        <symbol id="i-cut" viewBox="0 0 24 24">
+          <path
+            d="M6 6l14 14M6 18 20 4M8 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0m0 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0"
+          />
+        </symbol>
+        <symbol id="i-adjust" viewBox="0 0 24 24">
+          <path
+            d="M3 6h8m5 0h5M3 12h3m5 0h10M3 18h10m5 0h3M12 3v6M7 9v6m7 0v6"
+          />
+        </symbol>
+        <symbol id="i-fx" viewBox="0 0 24 24">
+          <path
+            d="m10 3 2 6 6 2-6 2-2 6-2-6-6-2 6-2zM19 2l.9 2.1 2.1.9-2.1.9L19 8l-.9-2.1L16 5l2.1-.9z"
+          />
+        </symbol>
+        <symbol id="i-key" viewBox="0 0 24 24">
+          <path d="m15 3 6 6-3 3-2-2-8 8-5 2 2-5 8-8-1-1z" />
+        </symbol>
+        <symbol id="i-blur" viewBox="0 0 24 24">
+          <path
+            d="M12 2C10 6 5 11 5 15a7 7 0 0 0 14 0c0-4-5-9-7-13zm-4 13a4 4 0 0 0 4 4"
+          />
+        </symbol>
+        <symbol id="i-media" viewBox="0 0 24 24">
+          <path d="M3 5h18v15H3zM3 15l5-5 6 6 3-3 4 4" />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24">
+          <path d="M12 4v16M4 12h16" />
+        </symbol>
+        <symbol id="i-undo" viewBox="0 0 24 24">
+          <path d="M9 4 3 10l6 5M4 10h10a6 6 0 0 1 0 12" />
+        </symbol>
+        <symbol id="i-full" viewBox="0 0 24 24">
+          <path d="M3 9V3h6m6 0h6v6m0 6v6h-6m-6 0H3v-6" />
+        </symbol>
+        <symbol id="i-play" viewBox="0 0 24 24">
+          <path d="M6 3 21 12 6 21z" />
+        </symbol>
+        <symbol id="i-pause" viewBox="0 0 24 24">
+          <path d="M6 4h3v16H6zm9 0h3v16h-3z" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="M5 5l14 14M19 5 5 19" />
+        </symbol>
+        <symbol id="i-zoomIn" viewBox="0 0 24 24">
+          <path
+            d="M16 16l5 5M10 6v8M6 10h8M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0"
+          />
+        </symbol>
+        <symbol id="i-zoomOut" viewBox="0 0 24 24">
+          <path d="M16 16l5 5M6 10h8M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0" />
+        </symbol>
+        <symbol id="i-layers" viewBox="0 0 24 24">
+          <path d="m12 3 10 5-10 5L2 8zm-9 9 9 5 9-5M3 16l9 5 9-5" />
+        </symbol>
+        <symbol viewBox="0 0 24 24" id="i-transform">
+          <path d="M3 7V3h4m10 0h4v4M3 17v4h4m10 0h4v-4M7 7h10v10H7z" />
+        </symbol>
+        <symbol viewBox="0 0 24 24" id="i-overlay">
+          <path d="M4 4h12v5H9v7H4zm6 6h11v11H10z" />
+        </symbol>
+        <symbol viewBox="0 0 24 24" id="i-text">
+          <path d="M4 7V4h16v3m-8-3v16m-4 0h8" />
+        </symbol>
+        <symbol viewBox="0 0 24 24" id="i-prev">
+          <path d="M6 5v14m12-14-9 7 9 7z" />
+        </symbol>
+        <symbol viewBox="0 0 24 24" id="i-next">
+          <path d="M18 5v14M6 5l9 7-9 7z" />
+        </symbol>
+        <symbol id="i-home" viewBox="0 0 24 24">
+          <path d="M3 10l9-7 9 7v10H15v-7H9v7H3z" />
+        </symbol>
+        <symbol id="i-folder" viewBox="0 0 24 24">
+          <path d="M3 7V5h7l2 3h9v12H3z" />
+        </symbol>
+        <symbol id="i-grid" viewBox="0 0 24 24">
+          <path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z" />
+        </symbol>
+        <symbol id="i-book" viewBox="0 0 24 24">
+          <path d="M3 4h5q3 0 4 3 1-3 4-3h5v15h-5q-3 0-4 2-1-2-4-2H3zm9 3v14" />
+        </symbol>
+        <symbol id="i-gear" viewBox="0 0 24 24">
+          <path
+            d="M9 3h6l1 3 3 1 2 4-2 2 .5 3-3 3-3-.5-2 2-4-2-1-3-3-1V9l3-1 1-3zM15.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0"
+          />
+        </symbol>
+        <symbol id="i-box" viewBox="0 0 24 24">
+          <path d="M3 8h18v12H3zm4 0V5h10v3M3 13q9 4 18 0m-10 0h2" />
+        </symbol>
+        <symbol id="i-in" viewBox="0 0 24 24">
+          <path d="M12 3v11m-4-4 4 4 4-4M4 15v5h16v-5" />
+        </symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24">
+          <path d="M20 12H4m6-6-6 6 6 6" />
+        </symbol>
+        <symbol id="i-chev" viewBox="0 0 24 24">
+          <path d="m14 5-7 7 7 7" />
+        </symbol>
+        <symbol id="i-film" viewBox="0 0 24 24">
+          <path d="M2 8h20v12H2zm0 0V4h20v4m-17 0 3-4m3 4 3-4m3 4 3-4" />
+        </symbol>
+        <symbol id="i-disk" viewBox="0 0 24 24">
+          <path d="M4 3h13l4 4v14H3V3zm3 0v7h9V3M7 21v-7h10v7" />
+        </symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24">
+          <path
+            d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2m-3 8a5 5 0 1 1-10 0 5 5 0 0 1 10 0"
+          />
+        </symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24">
+          <path d="M7 2h10v20H7zm4 17h2" />
+        </symbol>
+        <symbol id="i-screen" viewBox="0 0 24 24">
+          <path d="M2 4h20v13H2zm10 13v3m-5 1h10" />
+        </symbol>
+        <symbol id="i-square" viewBox="0 0 24 24">
+          <path d="M4 4h16v16H4z" />
+        </symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24">
+          <path d="M12 2l8 3v6q0 6-8 11-8-5-8-11V5zm-4 9 3 3 5-6" />
+        </symbol>
+        <symbol id="i-bell" viewBox="0 0 24 24">
+          <path d="M5 16h14l-2-3V9a5 5 0 0 0-10 0v4zM10 20h4" />
+        </symbol>
+        <symbol id="i-audio" viewBox="0 0 24 24">
+          <path d="M4 10v4m4-8v12m4-16v20m4-16v12m4-8v4" />
+        </symbol>
+        <symbol id="i-diamond" viewBox="0 0 24 24">
+          <path d="m12 2 10 10-10 10L2 12z" />
+        </symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24">
+          <path d="M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0m-10-6v7l4 2" />
+        </symbol>
+        <symbol id="i-palette" viewBox="0 0 24 24">
+          <path
+            d="M2 12a10 10 0 1 1 19 4h-5q-2 0-2 2v2q-1 3-5 1-7-2-7-9zm5-2h1m2-4h1m5 2h1"
+          />
+        </symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24">
+          <path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+          <path d="M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0m-2 5 6 6" />
+        </symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24">
+          <path d="M3 6h18M3 12h18M3 18h18" />
+        </symbol>
+      </defs>
+    </svg>
+    <div id="dashboard" class="shell">
+      <aside class="side" id="sidebar">
+        <div class="identity">
+          <span class="brandmark" aria-hidden="true"
+            ><i></i><i></i><i></i
+          ></span>
+          <div><b dir="ltr">MAX EDITOR</b><small>استوديو المونتاج</small></div>
+        </div>
+        <div class="navlabel">مساحة العمل</div>
+        <nav id="mainNav" aria-label="تنقل الاستوديو"></nav>
+        <div class="sideFoot">
+          <span class="localdot"></span> مساحة محلية خاصة
+        </div>
+      </aside>
+      <div class="surface">
+        <header class="dashhead">
+          <div class="crumb">
+            <svg class="i" aria-hidden="true"><use href="#i-grid" /></svg
+            ><span>مساحة العمل</span><i>/</i><b id="crumbTitle">الرئيسية</b>
+          </div>
+          <div class="headnote">
+            <span class="localdot"></span> الاستوديو المحلي
+          </div>
+          <button id="navSettings" class="round" aria-label="إعدادات التطبيق">
+            <svg class="i" aria-hidden="true"><use href="#i-gear" /></svg>
+          </button>
+        </header>
+        <section class="page" id="homeContent" tabindex="-1"></section>
+      </div>
+      <nav class="mobileNav" id="mobileNav" aria-label="التنقل السريع"></nav>
+    </div>
+    <dialog class="sheet" id="hubDialog">
+      <header>
+        <div>
+          <small>استوديو المونتاج</small>
+          <h2 id="sheetTitle"></h2>
+        </div>
+        <button class="round" id="sheetClose" aria-label="إغلاق">
+          <svg class="i" aria-hidden="true"><use href="#i-close" /></svg>
+        </button>
+      </header>
+      <div id="sheetBody"></div>
+    </dialog>
+    <div id="hubToast" role="status" hidden></div>
+    <input id="hubImport" type="file" hidden accept="video/*" multiple />
+    <main class="app" hidden>
+      <header class="topbar">
+        <div class="editorHome">
+          <span class="benchBrand" dir="ltr"><i>Ⅲ</i> MAX EDITOR</span>
+          <button
+            class="iconBtn"
+            id="backHome"
+            title="حفظ والعودة للرئيسية"
+            aria-label="حفظ والعودة للرئيسية"
+          >
+            <svg class="i" aria-hidden="true">
+              <use href="#i-home" />
+            </svg></button
+          ><button
+            class="iconBtn"
+            id="saveSession"
+            title="حفظ المشروع"
+            aria-label="حفظ المشروع"
+          >
+            <svg class="i" aria-hidden="true">
+              <use href="#i-disk" />
+            </svg></button
+          ><span id="sessionName">المحرر</span>
+        </div>
+        <button id="projectBtn" class="project-title" dir="rtl">
+          <span class="projectDot"></span
+          ><strong id="projectLabel">مقاس المشروع</strong> ▾</button
+        ><button class="export" dir="rtl" id="render" disabled>
+          <svg aria-hidden="true" class="i"><use href="#i-export" /></svg>تصدير
+        </button>
+      </header>
+      <div class="workspace">
+        <section class="viewer" aria-label="شاشة المعاينة">
+          <div class="mediaframe">
+            <div class="poster" id="slate"></div>
+            <video id="v" playsinline preload="auto" hidden></video
+            ><canvas id="fxcanvas" hidden></canvas>
+          </div>
+          <span class="monitorTag" dir="ltr"
+            ><i class="light"></i> المعاينة</span
+          ><button
+            id="exitFull"
+            class="iconBtn exitview"
+            title="إغلاق ملء الشاشة"
+            aria-label="إغلاق ملء الشاشة"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-close" /></svg>
+          </button>
+          <div class="toast" id="status" role="status" hidden></div>
+        </section>
+        <div class="transport" dir="ltr">
+          <span class="readout"
+            ><b id="clock">00:00.00</b>
+            <small>/ <span id="duration">00:00.00</span></small></span
+          ><button
+            id="preview"
+            class="play"
+            title="تشغيل المعاينة"
+            aria-label="تشغيل المعاينة"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-play" /></svg>
+          </button>
+          <div class="cluster">
+            <button id="undo" class="iconBtn" title="تراجع" aria-label="تراجع">
+              <svg aria-hidden="true" class="i">
+                <use href="#i-undo" />
+              </svg></button
+            ><button
+              id="full"
+              class="iconBtn"
+              title="معاينة بملء الشاشة"
+              aria-label="معاينة بملء الشاشة"
+            >
+              <svg aria-hidden="true" class="i"><use href="#i-full" /></svg>
+            </button>
+          </div>
+        </div>
+        <nav class="toolscroll" aria-label="أدوات المونتاج">
+          <button
+            class="tool"
+            data-panel="motionLab"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-diamond" /></svg
+            ><span>التحريك</span></button
+          ><button class="tool" id="effectBrowser">
+            <svg aria-hidden="true" class="i"><use href="#i-fx" /></svg
+            ><span>دليل المؤثرات</span></button
+          ><button class="tool" id="allTools">
+            <svg class="i" aria-hidden="true"><use href="#i-box" /></svg
+            ><span>كل الأدوات</span>
+          </button>
+          <button
+            class="tool"
+            data-panel="transform"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg class="i" aria-hidden="true"><use href="#i-transform" /></svg
+            ><span>تحويل</span></button
+          ><button
+            class="tool"
+            data-panel="text"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg class="i" aria-hidden="true"><use href="#i-text" /></svg
+            ><span>نص</span></button
+          ><button
+            class="tool"
+            data-panel="overlay"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg class="i" aria-hidden="true"><use href="#i-overlay" /></svg
+            ><span>تراكب</span></button
+          ><button
+            class="tool"
+            data-panel="cut"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-cut" /></svg
+            ><span>قصّ وحذف</span></button
+          ><button
+            class="tool"
+            data-panel="adjust"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-adjust" /></svg
+            ><span>ضبط اللون</span></button
+          ><button
+            class="tool"
+            data-panel="effects"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-fx" /></svg
+            ><span>المؤثرات</span></button
+          ><button
+            class="tool"
+            data-panel="blur"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-blur" /></svg
+            ><span>التمويه</span></button
+          ><button
+            class="tool"
+            data-panel="key"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-key" /></svg
+            ><span>كروما</span></button
+          ><button
+            class="tool"
+            data-panel="media"
+            aria-controls="drawer"
+            aria-expanded="false"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-media" /></svg
+            ><span>الوسائط</span>
+          </button>
+        </nav>
+        <div id="idleInspector">
+          <small>مساحة الخصائص</small>
+          <h2>خصائص الطبقة</h2>
+          <p>حدّد أداة لضبط العنصر عند المؤشر.</p>
+          <div id="propertyTiles"></div>
+        </div>
+        <aside class="drawer" id="drawer" hidden>
+          <div class="drawerTop">
+            <b id="drawerTitle"></b
+            ><button
+              id="dismiss"
+              class="iconBtn"
+              title="إغلاق الأدوات"
+              aria-label="إغلاق الأدوات"
+            >
+              <svg aria-hidden="true" class="i"><use href="#i-close" /></svg>
+            </button>
+          </div>
+          <div id="motionControls" hidden></div>
+          <div id="cuts" class="commands" hidden>
+            <button id="split">تقسيم</button
+            ><button id="right">حذف اليمين</button
+            ><button id="left">حذف اليسار</button
+            ><button id="del">حذف القطعة</button
+            ><span class="hint"
+              >اسحب خط الزمن حتى يصبح المؤشر داخل القطعة.</span
+            >
+          </div>
+          <div id="mediaTools" hidden>
+            <p class="hint">
+              أضف مقاطع متتابعة على المسار الرئيسي، أو ابدأ مشروعًا بملف بديل.
+            </p>
+            <button class="minor" id="append">إضافة مقاطع</button>
+            <button class="minor" id="choose">استبدال المشروع</button>
+          </div>
+          <div id="layerTools" hidden></div>
+          <div id="fxTools" hidden>
+            <div id="fxlist" class="pills"></div>
+            <p id="fxdesc" class="hint"></p>
+            <div class="fxacts">
+              <button class="apply" id="fxToggle"></button
+              ><button id="fxCompare"></button
+              ><button id="fxreset">ضبط افتراضي</button
+              ><button id="pipette" hidden>التقاط لون من الصورة</button
+              ><span class="hint" id="fxwhich"></span> ·
+              <span class="hint" id="fxcount"></span>
+            </div>
+            <div class="fxparams" id="fxparams"></div>
+          </div>
+        </aside>
+        <section class="desk" aria-label="خط الزمن">
+          <div class="trackhead">
+            <span class="cluster"
+              ><svg aria-hidden="true" class="i"><use href="#i-layers" /></svg
+              ><b>خط الزمن</b><span id="pieceCount" class="dim"></span
+            ></span>
+            <div class="cluster" dir="ltr">
+              <button
+                id="frameprev"
+                class="iconBtn"
+                title="الإطار السابق"
+                aria-label="الإطار السابق"
+              >
+                <svg class="i"><use href="#i-prev" /></svg></button
+              ><button
+                id="framenext"
+                class="iconBtn"
+                title="الإطار التالي"
+                aria-label="الإطار التالي"
+              >
+                <svg class="i"><use href="#i-next" /></svg></button
+              ><i class="tinyDivide"></i
+              ><button
+                id="zoomOut"
+                class="iconBtn"
+                title="تصغير خط الزمن"
+                aria-label="تصغير خط الزمن"
+              >
+                <svg aria-hidden="true" class="i">
+                  <use href="#i-zoomOut" />
+                </svg></button
+              ><span class="chip" id="zoomLabel">1×</span
+              ><button
+                id="zoomIn"
+                class="iconBtn"
+                title="تكبير خط الزمن"
+                aria-label="تكبير خط الزمن"
+              >
+                <svg aria-hidden="true" class="i"><use href="#i-zoomIn" /></svg>
+              </button>
+            </div>
+          </div>
+          <div class="tracklayout">
+            <button
+              id="pick"
+              class="add"
+              title="إضافة طبقة أو مقطع"
+              aria-label="إضافة طبقة أو مقطع"
+            >
+              <svg aria-hidden="true" class="i">
+                <use href="#i-plus" />
+              </svg></button
+            ><input id="file" type="file" accept="video/*" hidden />
+            <div class="lane">
+              <canvas
+                id="lane"
+                tabindex="0"
+                role="slider"
+                aria-label="مؤشر خط الزمن"
+              ></canvas
+              ><b class="needle" id="head"></b>
+            </div>
+          </div>
+          <div id="layerRows" aria-label="طبقات المشروع"></div>
+          <input
+            id="cursor"
+            type="range"
+            step="0.01"
+            min="0"
+            max="1"
+            value="0"
+            hidden
+          />
+          <div class="timefoot">
+            <span id="shortSelection"></span
+            ><span class="chip" id="clipInfo"></span>
+          </div>
+          <span class="sr" id="selection"></span
+          ><output hidden id="position"></output>
+        </section>
+      </div>
+    </main>
+    <input
+      hidden
+      id="appendFiles"
+      type="file"
+      accept="video/*"
+      multiple
+    /><input hidden id="overlayFile" type="file" accept="video/*,image/*" />
+    <dialog id="settings" dir="rtl">
+      <form id="settingForm">
+        <div class="resultTop">
+          <h2 id="settingTitle"></h2>
+          <button type="button" id="exitSettings" aria-label="إغلاق">✕</button>
+        </div>
+        <div id="projectFields">
+          <label
+            >قوالب المقاس<select id="preset">
+              <option value="custom">أبعاد مخصصة</option>
+              <option value="1080,1920">طولي · 9:16</option>
+              <option value="1920,1080">أفقي · 16:9</option>
+              <option value="1080,1080">مربع · 1:1</option>
+              <option value="1080,1350">منشور · 4:5</option>
+              <option value="1440,1080">كلاسيكي · 4:3</option>
+            </select></label
+          >
+          <div class="pair">
+            <label
+              >العرض بالبكسل<input
+                id="pw"
+                type="number"
+                required
+                min="64"
+                max="3840"
+                step="2" /></label
+            ><label
+              >الارتفاع بالبكسل<input
+                id="ph"
+                type="number"
+                required
+                min="64"
+                max="3840"
+                step="2" /></label
+            ><button
+              type="button"
+              id="swap"
+              class="minor"
+              title="تبديل الاتجاه"
+            >
+              ⇄
+            </button>
+          </div>
+          <label
+            >خلفية التصميم<select id="bg">
+              <option value="transparent">شفافة</option>
+              <option value="#ffffff">أبيض</option>
+              <option value="#000000">أسود</option>
+              <option value="#1565ff">أزرق</option>
+              <option value="#00aa44">أخضر</option>
+            </select></label
+          >
+        </div>
+        <div id="exportFields">
+          <label
+            >الدقة<select id="resolution">
+              <option value="0">مقاس المشروع</option>
+              <option value="480">480p</option>
+              <option value="720">720p</option>
+              <option value="1080">1080p</option>
+            </select></label
+          ><label
+            >معدل الإطارات المستهدف<select id="fps">
+              <option>24</option>
+              <option selected>30</option>
+              <option>60</option>
+            </select></label
+          ><label
+            >جودة الضغط <output id="qval"></output
+            ><input
+              type="range"
+              id="quality"
+              min="1"
+              max="20"
+              value="6"
+              dir="ltr"
+          /></label>
+          <p class="hint" id="estimate"></p>
+          <p class="hint">
+            التصدير لحظي. يعتمد المعدّل الفعلي على الجهاز، وتظهر المساحات
+            الشفافة بالأسود في الفيديو.
+          </p>
+          <button type="button" class="minor" id="png">
+            حفظ الإطار الحالي PNG بالشفافية
+          </button>
+        </div>
+        <button class="solid" id="confirmSettings"></button>
+      </form>
+    </dialog>
+    <div class="overlay" id="saving" hidden>
+      <div class="card" role="dialog" aria-label="التصدير">
+        <h2>جارٍ التصدير…</h2>
+        <p class="hint">أبقِ الصفحة مفتوحة حتى يكتمل الملف.</p>
+        <progress id="progress" max="1" value="0"></progress
+        ><button id="cancel" class="minor">إلغاء التصدير</button>
+      </div>
+    </div>
+    <div id="result" class="overlay" hidden>
+      <div class="card" role="dialog" aria-label="نتيجة التصدير">
+        <div class="resultTop">
+          <h2>الفيديو جاهز</h2>
+          <button
+            id="closeResult"
+            class="iconBtn"
+            title="العودة إلى المونتاج"
+            aria-label="العودة إلى المونتاج"
+          >
+            <svg aria-hidden="true" class="i"><use href="#i-close" /></svg>
+          </button>
+        </div>
+        <span class="chip" id="format"></span
+        ><video id="out" playsinline controls></video>
+        <div class="actions">
+          <a class="solid" id="download" download>تنزيل الفيديو</a
+          ><button class="minor" id="share" hidden>مشاركة الملف</button>
+        </div>
+      </div>
+    </div>
+    <dialog id="addMenu">
+      <div class="resultTop">
+        <div>
+          <small>الخط الزمني</small>
+          <h2>إضافة عنصر</h2>
+        </div>
+        <button id="closeAddMenu" class="iconBtn" aria-label="إغلاق">✕</button>
+      </div>
+      <div id="addChoices"></div>
+      <div class="shapeHead">
+        <b>الأشكال</b
+        ><label
+          >لون التعبئة <input type="color" id="shapeColor" value="#bca5ed"
+        /></label>
+      </div>
+      <div id="shapeChoices"></div>
+      <p class="hint">يُضاف الشكل كطبقة صورة شفافة عند المؤشر.</p>
+    </dialog>
+    <dialog id="effectsGallery" dir="rtl">
+      <div class="resultTop">
+        <div>
+          <small>مكتبة الصورة</small>
+          <h2>متصفح المؤثرات</h2>
+        </div>
+        <button class="iconBtn" id="exitGallery" aria-label="إغلاق">✕</button>
+      </div>
+      <p class="hint">اختر معالجة للقطعة المحددة ثم اضغط تطبيق.</p>
+      <div id="galleryCards"></div>
+    </dialog>
+    <script src="effects.js?v=03"></script>
+    <script src="editor.js?v=07"></script>
+    <script src="studio.js?v=07"></script>
+    <script src="composition.js?v=07"></script>
+    <script src="interface/workbench.js?v=07"></script>
+    <script src="interface/catalog.js?v=07"></script>
+    <script src="interface/library.js?v=07"></script>
+    <script src="interface/dashboard.js?v=07"></script>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+name: Separate Android 0.2.0 downloads
+on:
+  push:
+    branches: ['arena/bff96530-first']
+    paths: ['.github/workflows/max-editor-split-downloads.yml']
+permissions:
+  contents: write
+jobs:
+  split:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: android-identity-44912061336
+      BUNDLE: MAX-EDITOR-Android-0.2.0-build2.zip
+    steps:
+      - name: Compress only the verified installer and check the published download
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download "$TAG" -p "$BUNDLE"
+          unzip -j "$BUNDLE" MAX-EDITOR/apk/MAX-EDITOR.apk
+          echo '2eec42d8c022ddda1d2c4ef1272173257594307953bd05594a40320e38d14d1a  MAX-EDITOR.apk' | sha256sum -c -
+          archive=MAX-EDITOR-APK-only.zip
+          zip -9q "$archive" MAX-EDITOR.apk
+          test "$(unzip -Z1 "$archive")" = MAX-EDITOR.apk
+          gh release upload "$TAG" "$archive"
+          gh release download "$TAG" -p "$archive" -D verified
+          cmp "$archive" "verified/$archive"
+          unzip -tqq "verified/$archive"
+          unzip -p "verified/$archive" MAX-EDITOR.apk | cmp - MAX-EDITOR.apk

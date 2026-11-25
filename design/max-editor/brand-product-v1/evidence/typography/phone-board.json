@@ -1,0 +1,38 @@
+[
+  {
+    "width": 320,
+    "overflow": false,
+    "fonts": [
+      {
+        "familyName": "Tajawal",
+        "postScriptName": "Tajawal-Bold",
+        "isCustomFont": true,
+        "glyphCount": 10
+      }
+    ]
+  },
+  {
+    "width": 360,
+    "overflow": false,
+    "fonts": [
+      {
+        "familyName": "Tajawal",
+        "postScriptName": "Tajawal-Bold",
+        "isCustomFont": true,
+        "glyphCount": 10
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "overflow": false,
+    "fonts": [
+      {
+        "familyName": "Tajawal",
+        "postScriptName": "Tajawal-Bold",
+        "isCustomFont": true,
+        "glyphCount": 10
+      }
+    ]
+  }
+]

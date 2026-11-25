@@ -1,0 +1,38 @@
+name: Package reviewed host pilot (lab only)
+on:
+  push:
+    branches: ['arena/bff96530-first']
+    paths: ['deliveries/MAX-Editor-Host-Pilot-Evidence.zip']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Attach the actual isolated APK to the self-contained source and evidence bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          P="$RUNNER_TEMP/pilot";mkdir -p "$P";cd "$P"
+          unzip -q "$GITHUB_WORKSPACE/deliveries/MAX-Editor-Host-Pilot-Evidence.zip"
+          sha256sum --strict -c SHA256SUMS > /dev/null
+          run=$(jq -r '.url|split("/")[-1]' records/ci.json)
+          [[ $(gh run view "$run" -R "$GITHUB_REPOSITORY" --json headSha --jq .headSha) = "$(jq -r .headSha records/ci.json)" ]]
+          gh run download "$run" -R "$GITHUB_REPOSITORY" -n host-pilot-debug-apk -D "$RUNNER_TEMP/APK"
+          cp "$(find "$RUNNER_TEMP/APK" -type f -name '*.apk' -print -quit)" android/MAX-Host-Pilot-debug.apk
+          bt=$(dirname "$(find "$ANDROID_HOME/build-tools" -name aapt |sort -V|tail -1)");"$bt/aapt" dump badging android/MAX-Host-Pilot-debug.apk > "$RUNNER_TEMP/badging"
+          grep -q "^package: name='lab.maxeditor.hostpilot'" "$RUNNER_TEMP/badging"
+          "$bt/apksigner" verify android/MAX-Host-Pilot-debug.apk
+          sha256sum android/MAX-Host-Pilot-debug.apk >>SHA256SUMS
+          cp "$GITHUB_WORKSPACE/deliveries/MAX-Editor-Host-Pilot-Evidence.zip" "$RUNNER_TEMP/MAX-Editor-Host-Pilot.zip"
+          zip -qu "$RUNNER_TEMP/MAX-Editor-Host-Pilot.zip" android/MAX-Host-Pilot-debug.apk SHA256SUMS
+          # Replace manifest even if its rounded ZIP timestamp equals the original.
+          zip -q "$RUNNER_TEMP/MAX-Editor-Host-Pilot.zip" SHA256SUMS
+          unzip -tq "$RUNNER_TEMP/MAX-Editor-Host-Pilot.zip" |tail -1
+          unzip -p "$RUNNER_TEMP/MAX-Editor-Host-Pilot.zip" SHA256SUMS |sha256sum -c - >/dev/null
+          cd "$RUNNER_TEMP";sha256sum MAX-Editor-Host-Pilot.zip >MAX-Editor-Host-Pilot.zip.sha256
+          gh release create "editor-host-pilot-$run" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'MAX EDITOR · isolated host pilot (not production)' --notes "Synthetic fixture only. Separate Android package. See the Arabic results and open physical-device / black-frame gates inside. Build/evidence: https://github.com/$GITHUB_REPOSITORY/actions/runs/$run" MAX-Editor-Host-Pilot.zip MAX-Editor-Host-Pilot.zip.sha256

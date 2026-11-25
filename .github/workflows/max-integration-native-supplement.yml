@@ -1,0 +1,58 @@
+name: MAX Phase 2 independent native regression replay
+on:
+  push:
+    branches: ['arena/bff96530-first']
+    paths: ['qa/max-phase2/picker-observer.py', '.github/workflows/max-integration-native-supplement.yml']
+permissions:
+  contents: write
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: stable
+      - name: Archive the frozen baseline, not the integration build
+        run: |
+          mkdir -p "$RUNNER_TEMP/frozen" proof
+          git archive 8b02a0156cb62794b8324642cbf1c12f5d1e8bea max-motion | tar -xf - -C "$RUNNER_TEMP/frozen"
+          cd "$RUNNER_TEMP/frozen/max-motion/mobile"
+          python3 "$GITHUB_WORKSPACE/qa/max-phase2/picker-observer.py" tool/single_qa/host.py
+          flutter pub get && flutter gen-l10n && flutter build apk --debug
+          cp build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/normal.apk"
+          command -v ffmpeg || { sudo apt-get update -qq && sudo apt-get install -y ffmpeg; }
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Original device assertions including cold restart and rotation
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          script: bash -c 'cd "$RUNNER_TEMP/frozen/max-motion/mobile" && bash tool/single_qa/device.sh'
+      - if: always()
+        name: Collect bounds, frames, picker and restart evidence
+        run: |
+          if test -d "$RUNNER_TEMP/single-qa/evidence"; then cp -r "$RUNNER_TEMP/single-qa/evidence" proof/; else echo 'Device step did not produce evidence' > proof/not-run.txt; fi
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: native-replay
+          path: proof
+      - name: Export evidence for the report
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p proof/records; cd proof
+          zip -qr "$RUNNER_TEMP/proof.zip" .
+          sha=$(python3 -c 'import sys,json,base64;print(json.dumps({"encoding":"base64","content":base64.b64encode(open(sys.argv[1],"rb").read()).decode()}))' "$RUNNER_TEMP/proof.zip" | gh api -X POST "repos/$GITHUB_REPOSITORY/git/blobs" --input - --jq '.sha')
+          echo "::notice title=Experiment evidence::$sha"

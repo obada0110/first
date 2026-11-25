@@ -1,0 +1,1 @@
+{"name":"isolated-max-core-proof-tools","private":true,"version":"0.1.0","dependencies":{"esbuild":"0.25.12","playwright-core":"1.55.0"}}

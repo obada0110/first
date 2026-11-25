@@ -1,0 +1,36 @@
+name: Film published Android preview
+on:
+  push:
+    branches: ['arena/bff96530-first']
+    paths: ['max-motion/review/record.py','.github/workflows/max-editor-film.yml']
+permissions:
+  contents: write
+jobs:
+  record:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Retrieve reviewed APK and enable KVM
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download single-preview-44895793489 -p MAX-EDITOR-single-debug.apk -D "$RUNNER_TEMP"
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules; sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          disable-animations: false
+          script: |
+            adb install "$RUNNER_TEMP/MAX-EDITOR-single-debug.apk"
+            python3 -u max-motion/review/record.py > recording.log 2>&1
+      - name: Retain capture for guide
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          zip -qr /tmp/film.zip capture recording.log || true
+          python3 -c 'import json,base64;print(json.dumps({"encoding":"base64","content":base64.b64encode(open("/tmp/film.zip","rb").read()).decode()}))' | gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" --input - --jq '.sha' > /tmp/film-sha
+          echo "::notice title=Capture::$(cat /tmp/film-sha)"
