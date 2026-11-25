@@ -155,12 +155,13 @@ class _SingleState extends State<SingleScreen> {
 
   Future<void> addCoreTitle() async {
     if(!coreEnabled || projectCore==null || coreClips.isEmpty)return;
-    final t=AppLocalizations.of(context),controller=TextEditingController();
+    final t=AppLocalizations.of(context);
+    var draft='';
     final text=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
-      title:Text(t.coreAddTitle),content:TextField(key:const ValueKey('core-title-input'),controller:controller,autofocus:true,maxLength:400,decoration:InputDecoration(hintText:t.coreTitleHint)),
-      actions:[TextButton(onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx);},child:Text(t.cancel)),FilledButton(key:const ValueKey('core-title-confirm'),onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx,controller.text.trim());},child:Text(t.coreTitleSave))],
+      title:Text(t.coreAddTitle),content:TextField(key:const ValueKey('core-title-input'),autofocus:true,maxLength:400,onChanged:(value)=>draft=value,decoration:InputDecoration(hintText:t.coreTitleHint)),
+      actions:[TextButton(onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx);},child:Text(t.cancel)),FilledButton(key:const ValueKey('core-title-confirm'),onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx,draft.trim());},child:Text(t.coreTitleSave))],
     ));
-    controller.dispose();if(text==null||text.isEmpty||!mounted)return;
+    if(text==null||text.isEmpty||!mounted)return;
     final clips=coreClips;
     final duration=clips.fold<int>(0,(sum,c)=>sum+(c['outUs'] as int)-(c['inUs'] as int));
     const start=0;
