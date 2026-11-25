@@ -20,10 +20,24 @@ if ! flutter test --no-pub integration_test/core_edit_android_test.dart -d emula
 fi
 # flutter test's Android runner removes its temporary target package on teardown. Reinstall the same isolated debug APK and restore the exact v1 checkpoint captured from the app before exercising real cold-start and SAF repair.
 app=io.github.obada0110.maxeditor.phase3a
-[[ -s "$QA/evidence/project-v1.json" ]]
-adb install -r "$RUNNER_TEMP/MAX-EDITOR-Phase-3A-Core-Debug.apk" >/dev/null
-adb shell run-as "$app" sh -c 'cat > files/single-v1.json' < "$QA/evidence/project-v1.json"
-adb exec-out run-as "$app" cat files/single-v1.json | cmp - "$QA/evidence/project-v1.json"
+checkpoint_failure(){
+  printf 'Checkpoint reinstallation/restore failed at: %s\n' "$1" > "$QA/evidence/failure.log"
+  printf '\n=== installed MAX EDITOR packages ===\n' >> "$QA/evidence/failure.log"
+  adb shell pm list packages | grep maxeditor >> "$QA/evidence/failure.log" 2>&1 || true
+  printf '\n=== Android package/install diagnostics ===\n' >> "$QA/evidence/failure.log"
+  adb logcat -d -t 500 | grep -E 'PackageManager|INSTALL_FAILED|run-as|AndroidRuntime|FATAL EXCEPTION' | tail -60 >> "$QA/evidence/failure.log" 2>&1 || true
+  python3 tool/core_qa/ci_diagnostic.py "$QA/evidence/failure.log" "Android checkpoint restore"
+  publish_failure_summary
+  exit 1
+}
+[[ -s "$QA/evidence/project-v1.json" ]] || checkpoint_failure 'captured v1 file missing'
+adb install -r "$RUNNER_TEMP/MAX-EDITOR-Phase-3A-Core-Debug.apk" >/dev/null || checkpoint_failure 'install isolated core APK'
+adb shell run-as "$app" sh -c 'cat > files/single-v1.json' < "$QA/evidence/project-v1.json" || checkpoint_failure 'write v1 checkpoint into isolated app data'
+adb exec-out run-as "$app" cat files/single-v1.json > "$QA/evidence/restored-v1.json" || checkpoint_failure 'read restored v1 checkpoint'
+python3 - "$QA/evidence/project-v1.json" "$QA/evidence/restored-v1.json" <<'PY' || checkpoint_failure 'compare restored v1 checkpoint'
+import json,sys
+assert json.load(open(sys.argv[1]))==json.load(open(sys.argv[2])), 'restored checkpoint differs from app-captured v1 state'
+PY
 if ! python3 tool/core_qa/cold.py 2>&1 | tee "$QA/evidence/cold-reopen.log"; then
   { printf '\n=== cold reopen ===\n'; cat "$QA/evidence/cold-reopen.log"; printf '\n=== QA bridge ===\n'; cat "$QA/evidence/host.log"; printf '\n=== relevant Android logcat ===\n'; adb logcat -d -t 1200 | grep -E 'FATAL EXCEPTION|AndroidRuntime|MaxVideo|E/flutter|Exception|Caused by' | tail -60; } > "$QA/evidence/failure.log" 2>&1 || true
   python3 tool/core_qa/ci_diagnostic.py "$QA/evidence/failure.log" "Android cold-reopen and relink"
