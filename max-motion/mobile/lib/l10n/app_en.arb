@@ -96,7 +96,6 @@
   "coreRedo": "Redo",
   "coreAddTitle": "Add title",
   "coreTitleHint": "Title text",
-  "coreTitleSave": "Add title",
   "coreDeleteTitle": "Delete title",
   "coreApplied": "Shared-core edit saved",
   "corePlaybackLimited": "Source preview only: sequence playback and multi-clip export are not available in this phase.",

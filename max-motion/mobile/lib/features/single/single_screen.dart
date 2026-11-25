@@ -32,7 +32,7 @@ class _SingleState extends State<SingleScreen> {
   String? selectedCoreLayerId;
   String coreStatus = '';
   Map<dynamic, dynamic> data = {};
-  final start = TextEditingController(), end = TextEditingController();
+  final start = TextEditingController(), end = TextEditingController(), titleDraft = TextEditingController();
   Timer? timer;
   String error = '';
   bool busy = false, querying = false;
@@ -63,6 +63,7 @@ class _SingleState extends State<SingleScreen> {
     timer?.cancel();
     start.dispose();
     end.dispose();
+    titleDraft.dispose();
     super.dispose();
   }
 
@@ -155,20 +156,16 @@ class _SingleState extends State<SingleScreen> {
 
   Future<void> addCoreTitle() async {
     if(!coreEnabled || projectCore==null || coreClips.isEmpty)return;
-    final t=AppLocalizations.of(context);
-    var draft='';
-    final text=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
-      title:Text(t.coreAddTitle),content:TextField(key:const ValueKey('core-title-input'),autofocus:true,maxLength:400,onChanged:(value)=>draft=value,decoration:InputDecoration(hintText:t.coreTitleHint)),
-      actions:[TextButton(onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx);},child:Text(t.cancel)),FilledButton(key:const ValueKey('core-title-confirm'),onPressed:(){FocusScope.of(ctx).unfocus();Navigator.pop(ctx,draft.trim());},child:Text(t.coreTitleSave))],
-    ));
-    if(text==null||text.isEmpty||!mounted)return;
+    final text=titleDraft.text.trim();
+    if(text.isEmpty)return;
+    FocusManager.instance.primaryFocus?.unfocus();
     final clips=coreClips;
     final duration=clips.fold<int>(0,(sum,c)=>sum+(c['outUs'] as int)-(c['inUs'] as int));
-    const start=0;
     final remaining=duration.clamp(1,86400000000).toInt();
     final id=newProjectId();
-    final layer=<String,dynamic>{'id':id,'startUs':start,'durationUs':remaining,'kind':'text','text':text,'font':'bold','color':'#FFFFFF','effect':'outline','transform':{'base':{'x':50,'y':50,'w':80,'h':20,'angle':0,'opacity':100,'cropX':0,'cropY':0},'keys':<dynamic>[]}};
+    final layer=<String,dynamic>{'id':id,'startUs':0,'durationUs':remaining,'kind':'text','text':text,'font':'bold','color':'#FFFFFF','effect':'outline','transform':{'base':{'x':50,'y':50,'w':80,'h':20,'angle':0,'opacity':100,'cropX':0,'cropY':0},'keys':<dynamic>[]}};
     await coreEdit('addLayer',{'layer':layer});
+    titleDraft.clear();
     if(mounted)setState(()=>selectedCoreLayerId=id);
   }
 
@@ -671,6 +668,7 @@ class _SingleState extends State<SingleScreen> {
       final canCut=(data['position'] is int) && (data['position'] as int)>=(chosen['inUs'] as int)+50000 && (data['position'] as int)<=(chosen['outUs'] as int)-50000;
       return MxPanel(child:Padding(padding:const EdgeInsets.all(8),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Text(t.coreMode,style:type.labelLarge),
+        TextField(key:const ValueKey('core-title-input'),controller:titleDraft,maxLength:400,textInputAction:TextInputAction.done,decoration:InputDecoration(isDense:true,hintText:t.coreTitleHint)),
         SizedBox(height:48,child:ReorderableListView(
           scrollDirection:Axis.horizontal,padding:EdgeInsets.zero,buildDefaultDragHandles:false,
           onReorder:(oldIndex,newIndex){reorderCoreClip(oldIndex,newIndex);},
